@@ -39,6 +39,12 @@
 #include "py/mphal.h"
 #include "extmod/utime_mphal.h"
 
+#if MICROPY_PY_USE_CPP_TIME
+// You have to define these in the external project which links libmicropython.a
+struct tm * localtime_cpp(const time_t * timer);
+time_t time_cpp(time_t* timer);
+#endif
+
 #ifdef _WIN32
 static inline int msec_sleep_tv(struct timeval *tv) {
     msec_sleep(tv->tv_sec * 1000.0 + tv->tv_usec / 1000.0);
@@ -128,7 +134,11 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_time_sleep_obj, mod_time_sleep);
 STATIC mp_obj_t mod_time_localtime(size_t n_args, const mp_obj_t *args) {
     time_t t;
     if (n_args == 0) {
+        #if MICROPY_PY_USE_CPP_TIME
+        t = time_cpp(NULL);
+        #else
         t = time(NULL);
+        #endif
     } else {
         #if MICROPY_PY_BUILTINS_FLOAT
         mp_float_t val = mp_obj_get_float(args[0]);
@@ -137,7 +147,11 @@ STATIC mp_obj_t mod_time_localtime(size_t n_args, const mp_obj_t *args) {
         t = mp_obj_get_int(args[0]);
         #endif
     }
+    #if MICROPY_PY_USE_CPP_TIME
+    struct tm *tm = localtime_cpp(&t);
+    #else
     struct tm *tm = localtime(&t);
+    #endif
 
     mp_obj_t ret = mp_obj_new_tuple(9, NULL);
 

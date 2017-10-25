@@ -403,7 +403,12 @@ STATIC void set_sys_argv(char *argv[], int argc, int start_arg) {
 
 MP_NOINLINE int main_(int argc, char **argv);
 
+#if MICROPY_NO_MAIN
+int PythonMain(int argc, char **argv) {
+#else
 int main(int argc, char **argv) {
+#endif
+    
     #if MICROPY_PY_THREAD
     mp_thread_init();
     #endif
