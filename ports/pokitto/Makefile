@@ -98,4 +98,6 @@ SRC_QSTR += modules/modmachine.c modules/modupygame.c
 #test: $(BUILD)/firmware.elf
 #	$(Q)/bin/echo -e "print('hello world!', list(x+1 for x in range(10)), end='eol\\\\n')\\r\\n\\x04" | $(BUILD)/firmware.elf | tail -n2 | grep "^hello world! #\\[1, 2, 3, 4, 5, 6, 7, 8, 9, 10\\]eol"
 
+LIBMICROPYTHON_EXTRA_CMD = bash -x copy_lib_and_qstr.sh
+
 include $(TOP)/py/mkrules.mk
