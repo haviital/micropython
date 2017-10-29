@@ -63,6 +63,9 @@
 #define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_NONE)  //!!HV Check if this is correct
 #define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_NONE)
 
+// Pokitto specific
+#define POKITTO_USE_HIRES_BUFFER   (1)  // Hi-res buffer takes more memory than lo-res buffer
+
 // type definitions for the specific machine
 
 #define MICROPY_MAKE_POINTER_CALLABLE(p) ((void*)((mp_uint_t)(p) | 1))

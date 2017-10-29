@@ -31,8 +31,13 @@ void do_str(const char *src, mp_parse_input_kind_t input_kind) {
 #endif
 
 static char *stack_top;
-//static char heap[2048*9];
+
+// If Pokitto uses bigger hires buffer (220x176x4bpp), we must allocate less heap to Python.
+#if POKITTO_USE_HIRES_BUFFER
+static char heap[2048*8];
+#else
 static char heap[2048*10];
+#endif
 
 int main_upython(int argc, char **argv) {
     int stack_dummy;
