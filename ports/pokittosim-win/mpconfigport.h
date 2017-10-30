@@ -127,6 +127,9 @@
 #define MICROPY_PORT_INIT_FUNC      init()
 #define MICROPY_PORT_DEINIT_FUNC    deinit()
 
+// Pokitto specific
+#define POKITTO_USE_WIN_SIMULATOR   (1)
+
 // type definitions for the specific machine
 
 #if defined( __MINGW32__ ) && defined( __LP64__ )

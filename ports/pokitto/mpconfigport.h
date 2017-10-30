@@ -64,7 +64,8 @@
 #define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_NONE)
 
 // Pokitto specific
-#define POKITTO_USE_HIRES_BUFFER   (1)  // Hi-res buffer takes more memory than lo-res buffer
+#define POKITTO_USE_HIRES_BUFFER    (1)  // Hi-res buffer takes more memory than lo-res buffer
+#define POKITTO_USE_WIN_SIMULATOR   (0)
 
 // type definitions for the specific machine
 

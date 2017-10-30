@@ -39,7 +39,7 @@ static char heap[2048*8];
 static char heap[2048*10];
 #endif
 
-int main_upython(int argc, char **argv) {
+int PythonMain(int argc, char **argv) {
     int stack_dummy;
     stack_top = (char*)&stack_dummy;
 

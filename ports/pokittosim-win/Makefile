@@ -11,10 +11,12 @@ QSTR_DEFS = ../unix/qstrdefsport.h
 # include py core make definitions
 include $(TOP)/py/py.mk
 
+POKITTO_SIMULATOR_DIR = ../../../PokittoLib2/Pokitto/POKITTO_LIBS/MicroPython
+
 INC += -I.
 INC += -I$(TOP)
 INC += -I$(BUILD)
-INC += -I../../../PokittoSim_2/POKITTO_XTERNALS/MicroPython
+INC += -I$(POKITTO_SIMULATOR_DIR)
 
 # compiler settings
 CFLAGS = $(INC) -Wall -Wpointer-arith -Werror -std=gnu99 -DUNIX -D__USE_MINGW_ANSI_STDIO=1 $(CFLAGS_MOD) $(COPT)
@@ -71,6 +73,6 @@ SRC_QSTR_AUTO_DEPS +=
 #	$(Q)$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
 #	$(Q)$(SIZE) $@
 
-LIBMICROPYTHON_EXTRA_CMD = cp $(LIBMICROPYTHON) ../../../PokittoSim_2/lib/win/
+LIBMICROPYTHON_EXTRA_CMD = cp $(LIBMICROPYTHON) $(POKITTO_SIMULATOR_DIR)/libmicropython_win.a
 
 include $(TOP)/py/mkrules.mk
