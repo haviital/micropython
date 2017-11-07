@@ -453,13 +453,16 @@ STATIC mp_obj_t surface_blit(size_t n_args, const mp_obj_t *args) {
     mp_obj_surface_t *source = MP_OBJ_TO_PTR(args[1]);
     mp_int_t x = mp_obj_get_int(args[2]);
     mp_int_t y = mp_obj_get_int(args[3]);
+    mp_int_t transparentColor = 0;
+    if( n_args > 4)
+        transparentColor = mp_obj_get_int(args[4]);
 
 	//TODO: take source->stride into account also
 	//TODO: check that source->format is acceptable
-	Pok_Display_blitFrameBuffer(x, y, source->width, source->height, 0/*!!HV*/, source->buf);
+	Pok_Display_blitFrameBuffer(x, y, source->width, source->height, transparentColor, source->buf);
 	return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(surface_blit_obj, 4, 4, surface_blit);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(surface_blit_obj, 4, 5, surface_blit);
 
 STATIC const mp_rom_map_elem_t surface_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_get_rect), MP_ROM_PTR(&surface_get_rect_obj) },

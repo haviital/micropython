@@ -16,12 +16,12 @@ ifeq ($(CROSS), 1)
 CROSS_COMPILE = /cygdrive/P/bin/arm-none-eabi-
 endif
 
-POKITTO_SIMULATOR_DIR = ../../../PokittoLib2/Pokitto/POKITTO_LIBS/MicroPython
+POKITTO_DIR = ../../../PokittoLib2/Pokitto/POKITTO_LIBS/MicroPython
 
 INC += -I.
 INC += -I$(TOP)
 INC += -I$(BUILD)
-INC += -I$(POKITTO_SIMULATOR_DIR)
+INC += -I$(POKITTO_DIR)
 
 ifeq ($(CROSS), 1)
 DFU = $(TOP)/tools/dfu.py

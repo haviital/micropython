@@ -13,6 +13,7 @@ Install following packages using cygwin's setup.exe:
 Build using:
 
     make CROSS_COMPILE=i686-w64-mingw32- lib
+    
 
 Building mpy-cross (if needed)
 ------------------------------

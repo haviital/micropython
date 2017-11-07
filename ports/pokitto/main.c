@@ -11,8 +11,6 @@
 #include "py/stackctrl.h"
 #include "lib/utils/pyexec.h"
 
-#define ENABLE_REPL  (0) // Enable for usinf REPL or disable to execute python script file
-
 #if MICROPY_ENABLE_COMPILER
 void do_str(const char *src, mp_parse_input_kind_t input_kind) {
     nlr_buf_t nlr;
@@ -49,29 +47,29 @@ int PythonMain(int argc, char **argv) {
     gc_init(heap, heap + sizeof(heap));
     #endif
     mp_init();
-    
-    if(argc<1 || ENABLE_REPL) {
-    
-        #if MICROPY_REPL_EVENT_DRIVEN  
+
+    if(argc<1) {
+
+        #if MICROPY_REPL_EVENT_DRIVEN
         pyexec_event_repl_init();
         for (;;) {
             int c = mp_hal_stdin_rx_chr();
             if (pyexec_event_repl_process_char(c)) {
                 break;
             }
-        }    
-        #else   
-        pyexec_friendly_repl();    
+        }
+        #else
+        pyexec_friendly_repl();
         #endif  // MICROPY_REPL_EVENT_DRIVEN
-        
+
         //do_str("print('hello world!', list(x+1 for x in range(10)), end='eol\\n')", MP_PARSE_SINGLE_INPUT);
         //do_str("for i in range(10):\r\n  print(i)", MP_PARSE_FILE_INPUT);
-    
+
     } else {
-    
+
         pyexec_frozen_module(argv[1]);
     }
-    
+
     mp_deinit();
     return 0;
 }

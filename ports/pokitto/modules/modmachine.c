@@ -153,10 +153,10 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
 
     { MP_ROM_QSTR(MP_QSTR_PinBase), MP_ROM_PTR(&machine_pinbase_type) },
 	{ MP_ROM_QSTR(MP_QSTR_Signal), MP_ROM_PTR(&machine_signal_type) },
-	{ MP_ROM_QSTR(MP_QSTR_updatePokitto), MP_ROM_PTR(&mod_machine_update_obj) },
-	{ MP_ROM_QSTR(MP_QSTR_isRunningPokitto), MP_ROM_PTR(&mod_machine_isRunning_obj) },
+	//{ MP_ROM_QSTR(MP_QSTR_updatePokitto), MP_ROM_PTR(&mod_machine_update_obj) },
+	//{ MP_ROM_QSTR(MP_QSTR_isRunningPokitto), MP_ROM_PTR(&mod_machine_isRunning_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_blit_framebuf), MP_ROM_PTR(&mod_machine_blit_framebuf_obj) },
-	{ MP_ROM_QSTR(MP_QSTR_buttons_repeat), MP_ROM_PTR(&mod_machine_buttons_repeat_obj) },
+	//{ MP_ROM_QSTR(MP_QSTR_buttons_repeat), MP_ROM_PTR(&mod_machine_buttons_repeat_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_draw_text), MP_ROM_PTR(&mod_machine_draw_text_obj) },
 #if MICROPY_PY_MACHINE_PULSE
     { MP_ROM_QSTR(MP_QSTR_time_pulse_us), MP_ROM_PTR(&machine_time_pulse_us_obj) },
