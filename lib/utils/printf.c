@@ -44,7 +44,7 @@ int printf(const char *fmt, ...);
 int vprintf(const char *fmt, va_list ap);
 int putchar(int c);
 int puts(const char *s);
-int vsnprintf(char *str, size_t size, const char *fmt, va_list ap);
+int vsnprintf2(char *str, size_t size, const char *fmt, va_list ap);
 int snprintf(char *str, size_t size, const char *fmt, ...);
 
 int printf(const char *fmt, ...) {
@@ -106,10 +106,10 @@ STATIC void strn_print_strn(void *data, const char *str, size_t len) {
 #if defined(__GNUC__) && !defined(__clang__)
 // uClibc requires this alias to be defined, or there may be link errors
 // when linkings against it statically.
-int __GI_vsnprintf(char *str, size_t size, const char *fmt, va_list ap) __attribute__((weak, alias ("vsnprintf")));
+int __GI_vsnprintf(char *str, size_t size, const char *fmt, va_list ap) __attribute__((weak, alias ("vsnprintf2")));
 #endif
 
-int vsnprintf(char *str, size_t size, const char *fmt, va_list ap) {
+int vsnprintf2(char *str, size_t size, const char *fmt, va_list ap) {
     strn_print_env_t strn_print_env = {str, size};
     mp_print_t print = {&strn_print_env, strn_print_strn};
     int len = mp_vprintf(&print, fmt, ap);
@@ -127,7 +127,7 @@ int vsnprintf(char *str, size_t size, const char *fmt, va_list ap) {
 int snprintf(char *str, size_t size, const char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
-    int ret = vsnprintf(str, size, fmt, ap);
+    int ret = vsnprintf2(str, size, fmt, ap);
     va_end(ap);
     return ret;
 }

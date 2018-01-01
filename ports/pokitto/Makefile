@@ -13,7 +13,7 @@ QSTR_DEFS = qstrdefsport.h
 include $(TOP)/py/py.mk
 
 ifeq ($(CROSS), 1)
-CROSS_COMPILE = /cygdrive/P/bin/arm-none-eabi-
+CROSS_COMPILE = /cygdrive/c/EmBitz_share/em_armgcc/bin/arm-none-eabi-
 endif
 
 POKITTO_DIR = ../../../PokittoLib2/Pokitto/POKITTO_LIBS/MicroPython

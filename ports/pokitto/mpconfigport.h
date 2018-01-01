@@ -21,6 +21,7 @@
 #define MICROPY_MALLOC_USES_ALLOCATED_SIZE (1)
 #define MICROPY_MEM_STATS           (1)
 #define MICROPY_DEBUG_PRINTERS      (0)
+#define MICROPY_DEBUG_VERBOSE       (0)
 #define MICROPY_ENABLE_GC           (1)
 #define MICROPY_STACK_CHECK         (0)
 #define MICROPY_GC_ALLOC_THRESHOLD  (0)
@@ -64,11 +65,11 @@
 #define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_NONE)
 
 // Pokitto specific
-#define POKITTO_USE_HIRES_BUFFER    (0)  // Hi-res buffer takes more memory than lo-res buffer
+#define POKITTO_USE_HIRES_BUFFER    (1)  // Hi-res buffer takes more memory than lo-res buffer
 #define POKITTO_USE_WIN_SIMULATOR   (0)
 #define POKITTO_USE_REPL_ONLY       (0)
 #if POKITTO_USE_REPL_ONLY
-#define MICROPY_PY_BUILTINS_HELP    (1) 
+#define MICROPY_PY_BUILTINS_HELP    (1)
 #define MICROPY_PY_BUILTINS_HELP_MODULES (1)
 #endif
 

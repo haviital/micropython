@@ -390,39 +390,6 @@ STATIC mp_int_t surface_get_buffer(mp_obj_t self_in, mp_buffer_info_t *bufinfo, 
     return 0;
 }
 
-// Note: Only for 4-bit color
-STATIC mp_obj_t surface_fill_rect_internal(const mp_obj_surface_t *fb, int x, int y, int w, int h, uint32_t col) {
-    col &= 0x0f;
-    uint8_t *pixel_pair = &((uint8_t*)fb->buf)[(x + y * fb->stride) >> 1];
-    uint8_t col_shifted_left = col << 4;
-    uint8_t col_pixel_pair = col_shifted_left | col;
-    int pixel_count_till_next_line = (fb->stride - w) >> 1;
-    bool odd_x = (x % 2 == 1);
-
-    while (h--) {
-        int ww = w;
-
-        if (odd_x && ww > 0) {
-            *pixel_pair = (*pixel_pair & 0xf0) | col;
-            pixel_pair++;
-            ww--;
-        }
-
-        memset(pixel_pair, col_pixel_pair, ww >> 1);
-        pixel_pair += ww >> 1;
-
-        if (ww % 2) {
-            *pixel_pair = col_shifted_left | (*pixel_pair & 0x0f);
-            if (!odd_x) {
-                pixel_pair++;
-            }
-        }
-
-        pixel_pair += pixel_count_till_next_line;
-    }
-
-	return mp_const_none;
-}
 
 STATIC mp_obj_t surface_get_rect(size_t n_args, const mp_obj_t *args) {
 
@@ -438,15 +405,26 @@ STATIC mp_obj_t surface_get_rect(size_t n_args, const mp_obj_t *args) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(surface_get_rect_obj, 1, 1, surface_get_rect);
 
+// TODO: should only work for the screen surface
 STATIC mp_obj_t surface_fill(size_t n_args, const mp_obj_t *args) {
 
     mp_obj_surface_t *self = MP_OBJ_TO_PTR(args[0]);
-    mp_int_t col = mp_obj_get_int(args[1]);
-
-	return surface_fill_rect_internal(self, 0, 0, self->width, self->height, col);
+    mp_int_t color = mp_obj_get_int(args[1]);
+    if(n_args > 2) {
+        // fill the rect with the color
+        mp_obj_rect_t *rect = MP_OBJ_TO_PTR(args[2]);
+        Pok_Display_fillRectangle(rect->x, rect->y, rect->w, rect->h, color);
+    }
+    else {
+        // fill the whole screen  with the color
+        Pok_Display_fillRectangle(0, 0, self->width, self->height, color);
+    }
+    
+	return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(surface_fill_obj, 2, 2, surface_fill);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(surface_fill_obj, 2, 3   , surface_fill);
 
+// TODO: should only work for the screen surface
 STATIC mp_obj_t surface_blit(size_t n_args, const mp_obj_t *args) {
 
 	// For now, always draws the source surface to the screen! Does not draw to this surface!
@@ -464,10 +442,77 @@ STATIC mp_obj_t surface_blit(size_t n_args, const mp_obj_t *args) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(surface_blit_obj, 4, 5, surface_blit);
 
+STATIC mp_obj_t surface_setHwSprite(size_t n_args, const mp_obj_t *args) {
+
+	// For now, always draws the source surface to the screen! Does not draw to this surface!
+    mp_obj_surface_t *source = MP_OBJ_TO_PTR(args[1]);
+
+    // Create the array of 16-bit ints from the list.
+    mp_obj_list_t *aListOfInts = MP_OBJ_TO_PTR(args[2]);
+    uint16_t palette16x16bit[16];
+    for(int i = 0; i < 16; i++) {
+        uint16_t color16bit = 0;
+        if (i < aListOfInts->len)
+            color16bit = mp_obj_get_int(aListOfInts->items[i]);
+        palette16x16bit[i] = color16bit;
+    }
+
+    mp_int_t index = mp_obj_get_int(args[3]);
+    mp_int_t x = mp_obj_get_int(args[4]);
+    mp_int_t y = mp_obj_get_int(args[5]);
+    bool doResetDirtyRect = mp_obj_is_true(args[6]);
+
+    //mp_obj_bool_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_int_t transparentColor = 0;
+    if( n_args > 7)
+        transparentColor = mp_obj_get_int(args[7]);
+
+	//TODO: take source->stride into account also
+	//TODO: check that source->format is acceptable
+	Pok_Display_setSprite(index, x, y, source->width, source->height, transparentColor, source->buf, palette16x16bit, doResetDirtyRect);
+
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(surface_setHwSprite_obj, 7, 8, surface_setHwSprite);
+
+STATIC mp_obj_t surface_setHwSpritePos(size_t n_args, const mp_obj_t *args) {
+
+    mp_int_t index = mp_obj_get_int(args[1]);
+    mp_int_t x = mp_obj_get_int(args[2]);
+    mp_int_t y = mp_obj_get_int(args[3]);
+    
+	//TODO: take source->stride into account also
+	//TODO: check that source->format is acceptable
+	Pok_Display_setSpritePos(index, x, y);
+
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(surface_setHwSpritePos_obj, 4, 4, surface_setHwSpritePos);
+
+STATIC mp_obj_t surface_set_clip(size_t n_args, const mp_obj_t *args) {
+
+    if(n_args > 1) {
+        // Set clip rect for the screen buffer.
+        mp_obj_rect_t *rect = MP_OBJ_TO_PTR(args[1]);
+        Pok_Display_setClipRect(rect->x, rect->y, rect->w, rect->h);
+    }
+    else {
+        // Remove clip rect from the screen buffer.
+        Pok_Display_setClipRect(0, 0, 0, 0);    
+    }
+    
+
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(surface_set_clip_obj, 1, 2, surface_set_clip);
+
 STATIC const mp_rom_map_elem_t surface_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_get_rect), MP_ROM_PTR(&surface_get_rect_obj) },
     { MP_ROM_QSTR(MP_QSTR_fill), MP_ROM_PTR(&surface_fill_obj) },
     { MP_ROM_QSTR(MP_QSTR_blit), MP_ROM_PTR(&surface_blit_obj) },
+    { MP_ROM_QSTR(MP_QSTR_setHwSprite), MP_ROM_PTR(&surface_setHwSprite_obj) },
+    { MP_ROM_QSTR(MP_QSTR_setHwSpritePos), MP_ROM_PTR(&surface_setHwSpritePos_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_clip), MP_ROM_PTR(&surface_set_clip_obj) },
 };
 STATIC MP_DEFINE_CONST_DICT(surface_locals_dict, surface_locals_dict_table);
 
@@ -515,22 +560,42 @@ STATIC mp_obj_t display_set_mode(void) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(display_set_mode_obj, display_set_mode);
 
-STATIC mp_obj_t display_update(void) {
+STATIC mp_obj_t display_update(size_t n_args, const mp_obj_t *args) {
 
+    bool directDraw = false;
+    if( n_args > 0 )
+        directDraw = mp_obj_is_true(args[0]);
+
+    mp_obj_rect_t rect = { .x=0, .y=0, .w=Pok_Display_getWidth(), .h=Pok_Display_getHeight() };
+    if( n_args > 1 ) {
+        // fill the rect with the color
+        mp_obj_rect_t* rect2 = MP_OBJ_TO_PTR(args[1]);
+        rect.x = rect2->x; rect.y = rect2->y; rect.w = rect2->w; rect.h = rect2->h; 
+    }
+    
 	bool doUpdate = false;
 	while( !doUpdate )
 	{
-		doUpdate = Pok_Core_update(false);
+        doUpdate = Pok_Core_update(directDraw, rect.x, rect.y, rect.w, rect.h);
+        
 		#if UNIX  // windows or unix
 			//sleep(10);
 		#endif
 	}
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(display_update_obj, display_update);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(display_update_obj, 0, 2, display_update);
 
 STATIC mp_obj_t display_flip(void) {
-    return display_update();
+	bool doUpdate = false;
+	while( !doUpdate )
+	{
+		doUpdate = Pok_Core_update(false, 0, 0, Pok_Display_getWidth(), Pok_Display_getHeight());
+		#if UNIX  // windows or unix
+			//sleep(10);
+		#endif
+	}
+    return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(display_flip_obj, display_flip);
 
@@ -539,7 +604,7 @@ STATIC mp_obj_t display_set_palette(size_t n_args, const mp_obj_t *args) {
 
     if (n_args == 1) {
 
-        // Create the array of 4-bit ints from the list.
+        // Create the array of 16-bit ints from the list.
         mp_obj_list_t *aListOfTuples = MP_OBJ_TO_PTR(args[0]);
         uint16_t palette16[16];
         for(int i = 0; i < min(aListOfTuples->len, 16); i++) {
@@ -565,7 +630,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(display_set_palette_obj, 0, 1, displa
 // Set custom palette
 STATIC mp_obj_t display_set_palette_16bit(size_t n_args, const mp_obj_t *args) {
 
-    // Create the array of 4-bit ints from the list.
+    // Create the array of 16-bit ints from the list.
     mp_obj_list_t *aListOfInts = MP_OBJ_TO_PTR(args[0]);
     uint16_t palette16bit[16];
     for(int i = 0; i < min(aListOfInts->len, 16); i++) {

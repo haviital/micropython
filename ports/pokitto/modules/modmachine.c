@@ -89,26 +89,6 @@ uintptr_t mod_machine_mem_get_addr(mp_obj_t addr_o, uint align) {
     return addr;
 }
 
-STATIC mp_obj_t mod_machine_update(void) {
-
-	bool ret = Pok_Core_update(false);
-
-	// For some strange reason, the above do not work!!
-	// return mp_obj_new_bool(ret);
-
-	if (ret)
-		return mp_obj_new_bool(true);
-	else
-		return mp_obj_new_bool(false);
-
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_machine_update_obj, mod_machine_update);
-
-STATIC mp_obj_t mod_machine_isRunning(void) {
-	return mp_obj_new_bool(Pok_Core_isRunning());
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_machine_isRunning_obj, mod_machine_isRunning);
-
 STATIC mp_obj_t mod_machine_blit_framebuf(size_t n_args, const mp_obj_t *args) {
 	
     mp_obj_framebuf_t *source = MP_OBJ_TO_PTR(args[0]);
@@ -153,8 +133,6 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
 
     { MP_ROM_QSTR(MP_QSTR_PinBase), MP_ROM_PTR(&machine_pinbase_type) },
 	{ MP_ROM_QSTR(MP_QSTR_Signal), MP_ROM_PTR(&machine_signal_type) },
-	//{ MP_ROM_QSTR(MP_QSTR_updatePokitto), MP_ROM_PTR(&mod_machine_update_obj) },
-	//{ MP_ROM_QSTR(MP_QSTR_isRunningPokitto), MP_ROM_PTR(&mod_machine_isRunning_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_blit_framebuf), MP_ROM_PTR(&mod_machine_blit_framebuf_obj) },
 	//{ MP_ROM_QSTR(MP_QSTR_buttons_repeat), MP_ROM_PTR(&mod_machine_buttons_repeat_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_draw_text), MP_ROM_PTR(&mod_machine_draw_text_obj) },
