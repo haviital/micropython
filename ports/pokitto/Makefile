@@ -16,12 +16,24 @@ ifeq ($(CROSS), 1)
 CROSS_COMPILE = /cygdrive/c/EmBitz_share/em_armgcc/bin/arm-none-eabi-
 endif
 
+EXTMOD_DIR = $(TOP)/extmod
 POKITTO_DIR = ../../../PokittoLib2/Pokitto/POKITTO_LIBS/MicroPython
+MBED_HAL_DIR = ../../../PokittoLib2/Pokitto/mbed-pokitto/hal
+MBED_HAL_DIR2 = ../../../PokittoLib2/Pokitto/mbed-pokitto/targets/hal/TARGET_NXP/TARGET_LPC11U6X
+MBED_API_DIR = ../../../PokittoLib2/Pokitto/mbed-pokitto/api
+MBED_CMSIS_DIR = ../../../PokittoLib2/Pokitto/mbed-pokitto/targets/cmsis
+MBED_CMSIS_DIR2 = ../../../PokittoLib2/Pokitto/mbed-pokitto/targets/cmsis/TARGET_NXP/TARGET_LPC11U6X
 
 INC += -I.
 INC += -I$(TOP)
 INC += -I$(BUILD)
+INC += -I$(EXTMOD_DIR)
 INC += -I$(POKITTO_DIR)
+INC += -I$(MBED_HAL_DIR)
+INC += -I$(MBED_HAL_DIR2)
+INC += -I$(MBED_API_DIR)
+INC += -I$(MBED_CMSIS_DIR)
+INC += -I$(MBED_CMSIS_DIR2)
 
 ifeq ($(CROSS), 1)
 DFU = $(TOP)/tools/dfu.py
@@ -37,7 +49,8 @@ endif
 
 # Tune for Debugging or Optimization
 ifeq ($(DEBUG), 1)
-CFLAGS += -O0 -ggdb
+#CFLAGS += -O0 -ggdb
+CFLAGS += -Og -ggdb3
 else
 #CFLAGS += -Os -DNDEBUG
 CFLAGS += -O3 -DNDEBUG
@@ -50,6 +63,7 @@ SRC_C = \
 	main.c \
 	uart_core.c \
 	modules/modmachine.c \
+	modules/machine_pin.c \
 	modules/modupygame.c \
 	lib/utils/stdout_helpers.c \
 	lib/utils/pyexec.c \
@@ -59,7 +73,7 @@ SRC_C = \
 
 OBJ = $(PY_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 
-SRC_QSTR += modules/modmachine.c modules/modupygame.c
+SRC_QSTR += modules/modmachine.c modules/machine_pin.c modules/modupygame.c
 
 #ifeq ($(CROSS), 1)
 #all: $(BUILD)/firmware.dfu

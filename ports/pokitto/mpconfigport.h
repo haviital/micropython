@@ -12,8 +12,8 @@
 #define MICROPY_ALLOC_PATH_MAX      (256)
 #define MICROPY_ALLOC_PARSE_CHUNK_INIT (16)
 #define MICROPY_EMIT_X64            (0)
-#define MICROPY_EMIT_THUMB          (0)
-#define MICROPY_EMIT_INLINE_THUMB   (0)
+#define MICROPY_EMIT_THUMB          (0) //!!HV kokeile kytkeä päälle
+#define MICROPY_EMIT_INLINE_THUMB   (0) //!!HV kokeile kytkeä päälle
 #define MICROPY_COMP_MODULE_CONST   (0)
 #define MICROPY_COMP_CONST          (0)
 #define MICROPY_COMP_DOUBLE_TUPLE_ASSIGN (0)
@@ -23,12 +23,12 @@
 #define MICROPY_DEBUG_PRINTERS      (0)
 #define MICROPY_DEBUG_VERBOSE       (0)
 #define MICROPY_ENABLE_GC           (1)
-#define MICROPY_STACK_CHECK         (0)
+#define MICROPY_STACK_CHECK         (0) //!!HV kokeile kytkeä päälle
 #define MICROPY_GC_ALLOC_THRESHOLD  (0)
 #define MICROPY_REPL_EVENT_DRIVEN   (0)
 #define MICROPY_HELPER_REPL         (1)
 #define MICROPY_HELPER_LEXER_UNIX   (0)
-#define MICROPY_ENABLE_SOURCE_LINE  (0)
+#define MICROPY_ENABLE_SOURCE_LINE  (1)
 #define MICROPY_ENABLE_DOC_STRING   (0)
 #define MICROPY_ERROR_REPORTING     (MICROPY_ERROR_REPORTING_TERSE)
 #define MICROPY_BUILTIN_METHOD_CHECK_SELF_ARG (0)
@@ -57,12 +57,15 @@
 #define MICROPY_PY_URANDOM          (1)
 #define MICROPY_PY_STRUCT           (0)
 #define MICROPY_PY_SYS              (0)
-#define MICROPY_USE_INTERNAL_PRINTF (0)
+#define MICROPY_USE_INTERNAL_PRINTF (1)
 #define MICROPY_MODULE_FROZEN_MPY   (1)
 #define MICROPY_MODULE_FROZEN_STR   (0)
 #define MICROPY_CPYTHON_COMPAT      (0)
 #define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_NONE)  //!!HV Check if this is correct
 #define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_NONE)
+
+#define MICROPY_MPHALPORT_H         "pok_hal.h"
+// #define MICROPY_PIN_DEFS_PORT_H "pin_defs_pok.h"
 
 // Pokitto specific
 #define POKITTO_USE_HIRES_BUFFER    (1)  // Hi-res buffer takes more memory than lo-res buffer

@@ -73,6 +73,9 @@ typedef struct _mp_obj_eventtype_t {
 #define PYGAME_K_DOWN	(8)
 #define PYGAME_K_LEFT	(9)
 #define PYGAME_K_RIGHT	(10)
+#define PYGAME_K_ABUT    (11)
+#define PYGAME_K_BBUT    (12)
+#define PYGAME_K_CBUT    (13)
 
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -163,6 +166,12 @@ STATIC mp_obj_t event_poll(void) {
         Pok_addToRingBuffer( PYGAME_KEYDOWN, PYGAME_K_LEFT);
 	if( Pok_Core_buttons_held(BTN_RIGHT, 1) )
         Pok_addToRingBuffer( PYGAME_KEYDOWN, PYGAME_K_RIGHT);
+	if( Pok_Core_buttons_held(BTN_A, 1) )
+        Pok_addToRingBuffer( PYGAME_KEYDOWN, PYGAME_K_ABUT);
+	if( Pok_Core_buttons_held(BTN_B, 1) )
+        Pok_addToRingBuffer( PYGAME_KEYDOWN, PYGAME_K_BBUT);
+	if( Pok_Core_buttons_held(BTN_C, 1) )
+        Pok_addToRingBuffer( PYGAME_KEYDOWN, PYGAME_K_CBUT);   
 
     // Is key released? Add to the buffer.
     if( Pok_Core_buttons_released(BTN_UP) )
@@ -173,6 +182,12 @@ STATIC mp_obj_t event_poll(void) {
         Pok_addToRingBuffer( PYGAME_KEYUP, PYGAME_K_LEFT);
     if( Pok_Core_buttons_released(BTN_RIGHT) )
         Pok_addToRingBuffer( PYGAME_KEYUP, PYGAME_K_RIGHT);
+    if( Pok_Core_buttons_released(BTN_A) )
+        Pok_addToRingBuffer( PYGAME_KEYUP, PYGAME_K_ABUT);
+    if( Pok_Core_buttons_released(BTN_B) )
+        Pok_addToRingBuffer( PYGAME_KEYUP, PYGAME_K_BBUT);
+    if( Pok_Core_buttons_released(BTN_C) )
+        Pok_addToRingBuffer( PYGAME_KEYUP, PYGAME_K_CBUT);
 
     // Read the oldest item, if any.
     EventRingBufferItem item;
@@ -688,6 +703,10 @@ STATIC const mp_rom_map_elem_t pygame_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_K_DOWN), MP_ROM_INT(PYGAME_K_DOWN) },
     { MP_ROM_QSTR(MP_QSTR_K_LEFT), MP_ROM_INT(PYGAME_K_LEFT) },
     { MP_ROM_QSTR(MP_QSTR_K_RIGHT), MP_ROM_INT(PYGAME_K_RIGHT) },
+    { MP_ROM_QSTR(MP_QSTR_BUT_A), MP_ROM_INT(PYGAME_K_ABUT) },
+    { MP_ROM_QSTR(MP_QSTR_BUT_B), MP_ROM_INT(PYGAME_K_BBUT) },
+    { MP_ROM_QSTR(MP_QSTR_BUT_C), MP_ROM_INT(PYGAME_K_CBUT) },
+    
 };
 
 STATIC MP_DEFINE_CONST_DICT(pygame_module_globals, pygame_module_globals_table);
