@@ -1,6 +1,8 @@
 #ifndef MICROPY_INCLUDED_POKITTO_MODMACHINE_H
 #define MICROPY_INCLUDED_POKITTO_MODMACHINE_H
 
+#if !POKITTO_USE_WIN_SIMULATOR
+
 #include "py/obj.h"
 #include "PinNames.h"
 #include "gpio_object.h"
@@ -38,5 +40,7 @@ typedef struct _machine_pin_obj_t {
     //struct device *port;
     //uint32_t pin;
 } machine_pin_obj_t;
+
+#endif // POKITTO_USE_WIN_SIMULATOR
 
 #endif // MICROPY_INCLUDED_POKITTO_MODMACHINE_H

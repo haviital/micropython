@@ -171,7 +171,7 @@ STATIC mp_obj_t event_poll(void) {
 	if( Pok_Core_buttons_held(BTN_B, 1) )
         Pok_addToRingBuffer( PYGAME_KEYDOWN, PYGAME_K_BBUT);
 	if( Pok_Core_buttons_held(BTN_C, 1) )
-        Pok_addToRingBuffer( PYGAME_KEYDOWN, PYGAME_K_CBUT);   
+        Pok_addToRingBuffer( PYGAME_KEYDOWN, PYGAME_K_CBUT);
 
     // Is key released? Add to the buffer.
     if( Pok_Core_buttons_released(BTN_UP) )
@@ -377,7 +377,7 @@ STATIC mp_obj_t surface_make_new(const mp_obj_type_t *type, size_t n_args, size_
 	 if (n_args >= 3) {
 		o->buf_obj = args[2];
 		mp_buffer_info_t bufinfo;
-		mp_get_buffer_raise(args[2], &bufinfo, MP_BUFFER_WRITE);
+		mp_get_buffer_raise(args[2], &bufinfo, MP_BUFFER_READ);
 		o->buf = bufinfo.buf;
 	 }
 	 else {
@@ -434,7 +434,7 @@ STATIC mp_obj_t surface_fill(size_t n_args, const mp_obj_t *args) {
         // fill the whole screen  with the color
         Pok_Display_fillRectangle(0, 0, self->width, self->height, color);
     }
-    
+
 	return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(surface_fill_obj, 2, 3   , surface_fill);
@@ -459,7 +459,14 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(surface_blit_obj, 4, 5, surface_blit)
 
 STATIC mp_obj_t surface_setHwSprite(size_t n_args, const mp_obj_t *args) {
 
-	// For now, always draws the source surface to the screen! Does not draw to this surface!
+    mp_int_t index = mp_obj_get_int(args[3]);
+
+	if(args[1] == mp_const_none) {
+        Pok_Display_setSprite(index, 0, 0, 0, 0, 0, NULL, NULL, false);
+        return mp_const_none;
+    }
+
+    // Get source surface.
     mp_obj_surface_t *source = MP_OBJ_TO_PTR(args[1]);
 
     // Create the array of 16-bit ints from the list.
@@ -472,7 +479,6 @@ STATIC mp_obj_t surface_setHwSprite(size_t n_args, const mp_obj_t *args) {
         palette16x16bit[i] = color16bit;
     }
 
-    mp_int_t index = mp_obj_get_int(args[3]);
     mp_int_t x = mp_obj_get_int(args[4]);
     mp_int_t y = mp_obj_get_int(args[5]);
     bool doResetDirtyRect = mp_obj_is_true(args[6]);
@@ -495,7 +501,7 @@ STATIC mp_obj_t surface_setHwSpritePos(size_t n_args, const mp_obj_t *args) {
     mp_int_t index = mp_obj_get_int(args[1]);
     mp_int_t x = mp_obj_get_int(args[2]);
     mp_int_t y = mp_obj_get_int(args[3]);
-    
+
 	//TODO: take source->stride into account also
 	//TODO: check that source->format is acceptable
 	Pok_Display_setSpritePos(index, x, y);
@@ -513,9 +519,9 @@ STATIC mp_obj_t surface_set_clip(size_t n_args, const mp_obj_t *args) {
     }
     else {
         // Remove clip rect from the screen buffer.
-        Pok_Display_setClipRect(0, 0, 0, 0);    
+        Pok_Display_setClipRect(0, 0, 0, 0);
     }
-    
+
 
 	return mp_const_none;
 }
@@ -575,6 +581,7 @@ STATIC mp_obj_t display_set_mode(void) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(display_set_mode_obj, display_set_mode);
 
+// Update the screen and subsustems (audio, events, etc.). Takes in to account FPS limit. Optionally, updates the screen immediately and skip other updates.
 STATIC mp_obj_t display_update(size_t n_args, const mp_obj_t *args) {
 
     bool directDraw = false;
@@ -583,23 +590,33 @@ STATIC mp_obj_t display_update(size_t n_args, const mp_obj_t *args) {
 
     mp_obj_rect_t rect = { .x=0, .y=0, .w=Pok_Display_getWidth(), .h=Pok_Display_getHeight() };
     if( n_args > 1 ) {
-        // fill the rect with the color
+        // Get the update rect.
         mp_obj_rect_t* rect2 = MP_OBJ_TO_PTR(args[1]);
-        rect.x = rect2->x; rect.y = rect2->y; rect.w = rect2->w; rect.h = rect2->h; 
+        rect.x = rect2->x; rect.y = rect2->y; rect.w = rect2->w; rect.h = rect2->h;
     }
-    
-	bool doUpdate = false;
-	while( !doUpdate )
-	{
-        doUpdate = Pok_Core_update(directDraw, rect.x, rect.y, rect.w, rect.h);
-        
-		#if UNIX  // windows or unix
-			//sleep(10);
-		#endif
-	}
+
+    // Get drawNow parameter.
+    bool drawNow = false;
+    if( n_args > 2 )
+        drawNow = mp_obj_is_true(args[2]);
+
+    if( drawNow ) {
+        // Draw the screen surface immediately to the display. Do not care about fps limits. Do not run event loops etc.
+        Pok_Display_update(directDraw, rect.x, rect.y, rect.w, rect.h);
+    }
+    else {
+        // Run the event loops, audio loops etc. Draws the screen when the fps limit is reached and returns true.
+
+        while( ! Pok_Core_update(directDraw, rect.x, rect.y, rect.w, rect.h) )
+        {}
+
+        // This call updates the screen.
+        (void)Pok_Core_update(directDraw, rect.x, rect.y, rect.w, rect.h);
+
+    }
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(display_update_obj, 0, 2, display_update);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(display_update_obj, 0, 3, display_update);
 
 STATIC mp_obj_t display_flip(void) {
 	bool doUpdate = false;
@@ -706,7 +723,7 @@ STATIC const mp_rom_map_elem_t pygame_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_BUT_A), MP_ROM_INT(PYGAME_K_ABUT) },
     { MP_ROM_QSTR(MP_QSTR_BUT_B), MP_ROM_INT(PYGAME_K_BBUT) },
     { MP_ROM_QSTR(MP_QSTR_BUT_C), MP_ROM_INT(PYGAME_K_CBUT) },
-    
+
 };
 
 STATIC MP_DEFINE_CONST_DICT(pygame_module_globals, pygame_module_globals_table);
