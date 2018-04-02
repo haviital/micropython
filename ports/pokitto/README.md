@@ -48,4 +48,10 @@ In copy_lib_and_qstr.sh:
 - ../../../PokittoLib2/Pokitto/POKITTO_LIBS/MicroPython
   - This is the path to the MicroPython folder under the PokittoLib
 
+FAQ
+-----------------------------
+Q: How to set source file path for EmBitz GDB debugger for MicroPython?
+A: Menu: "Debug/Interfaces/GDB Additionals/. Add to "Before Connect textbox" : "dir ../micropython2/ports/pokitto/modules"
+
+
 

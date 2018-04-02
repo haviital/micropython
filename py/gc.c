@@ -33,6 +33,9 @@
 
 #if MICROPY_ENABLE_GC
 
+// Stack overflow check
+extern void CheckStack();
+
 #if MICROPY_DEBUG_VERBOSE // print debugging info
 #define DEBUG_PRINT (1)
 #define DEBUG_printf DEBUG_printf
@@ -396,6 +399,9 @@ void *gc_alloc(size_t n_bytes, bool has_finaliser) {
     size_t n_blocks = ((n_bytes + BYTES_PER_BLOCK - 1) & (~(BYTES_PER_BLOCK - 1))) / BYTES_PER_BLOCK;
     DEBUG_printf("gc_alloc(" UINT_FMT " bytes -> " UINT_FMT " blocks)\n", n_bytes, n_blocks);
 
+    // Check for stack overflow here as this is a frequently called function.
+    CheckStack();  //!!HV    
+    
     // check for 0 allocation
     if (n_blocks == 0) {
         return NULL;
