@@ -65,6 +65,7 @@ SRC_C = \
 	modules/modmachine.c \
 	modules/machine_pin.c \
 	modules/modupygame.c \
+	modules/modupygame_mixer.c \
 	lib/utils/stdout_helpers.c \
 	lib/utils/pyexec.c \
 	lib/libc/string0.c \
@@ -73,7 +74,7 @@ SRC_C = \
 
 OBJ = $(PY_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 
-SRC_QSTR += modules/modmachine.c modules/machine_pin.c modules/modupygame.c
+SRC_QSTR += modules/modmachine.c modules/machine_pin.c modules/modupygame.c modules/modupygame_mixer.c
 
 #ifeq ($(CROSS), 1)
 #all: $(BUILD)/firmware.dfu

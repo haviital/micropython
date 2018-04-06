@@ -35,6 +35,8 @@
 
 #include "PythonBindings.h"
 
+extern const mp_obj_module_t mp_module_mixer;
+
 // *** surface member data
 typedef struct _mp_obj_surface_t {
     mp_obj_base_t base;
@@ -360,7 +362,7 @@ STATIC const mp_obj_type_t mp_type_rect = {
     .attr = rect_attr,
 };
 
-// *** surface module
+// *** SURFACE  module ***
 
 STATIC mp_obj_t surface_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
 
@@ -704,6 +706,7 @@ STATIC const mp_rom_map_elem_t pygame_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_display), MP_ROM_PTR(&mp_module_display) },  	// display module
     { MP_ROM_QSTR(MP_QSTR_surface), MP_ROM_PTR(&mp_module_surface) },  	// surface module
     { MP_ROM_QSTR(MP_QSTR_event), MP_ROM_PTR(&mp_module_event) },  		// event module
+    { MP_ROM_QSTR(MP_QSTR_mixer), MP_ROM_PTR(&mp_module_mixer) },  	// Audio Mixer module
 
     // Classes
     { MP_ROM_QSTR(MP_QSTR_Rect), MP_ROM_PTR(&mp_type_rect) },	// Event class

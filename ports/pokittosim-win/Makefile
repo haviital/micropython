@@ -38,6 +38,7 @@ SRC_C = \
 	ports/unix/modos.c \
 	ports/pokitto/modules/modmachine.c \
 	ports/pokitto/modules/modupygame.c \
+	ports/pokitto/modules/modupygame_mixer.c \
 	ports/unix/modtime.c \
 	ports/unix/gccollect.c \
 	windows_mphal.c \
