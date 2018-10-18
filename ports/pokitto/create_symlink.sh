@@ -1,0 +1,1 @@
+ln -s /cygdrive/c/Program\ Files\ \(x86\)/EmBitz/1.11/share /cygdrive/c/EmBitz_share
