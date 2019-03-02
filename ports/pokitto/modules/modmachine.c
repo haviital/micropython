@@ -132,6 +132,12 @@ STATIC mp_obj_t mod_machine_wait(size_t n_args, const mp_obj_t *args) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_machine_wait_obj, 1, 1, mod_machine_wait);
 
+STATIC mp_obj_t mod_machine_time_us(void) {
+	uint32_t time_ms = Pok_Time_us();
+	return mp_obj_new_int(time_ms);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_machine_time_us_obj, mod_machine_time_us);
+
 STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_umachine) },
 
@@ -151,6 +157,7 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_time_pulse_us), MP_ROM_PTR(&machine_time_pulse_us_obj) },
 #endif
  	{ MP_ROM_QSTR(MP_QSTR_wait), MP_ROM_PTR(&mod_machine_wait_obj) },
+ 	{ MP_ROM_QSTR(MP_QSTR_time_us), MP_ROM_PTR(&mod_machine_time_us_obj) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(machine_module_globals, machine_module_globals_table);

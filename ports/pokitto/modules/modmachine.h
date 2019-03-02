@@ -6,7 +6,7 @@
 #include "py/obj.h"
 #include "PinNames.h"
 #include "gpio_object.h"
-
+#include "analogin_api.h"
 
 // Copied from "Pokitto_extport.h"
 #define EXT0 	P1_19
@@ -35,8 +35,9 @@ extern const mp_obj_type_t machine_pin_type;
 
 typedef struct _machine_pin_obj_t {
     mp_obj_base_t base;
-    gpio_t* gpio;
+    uint32_t* data;
     uint32_t pinNum;
+    uint32_t mode;
     //struct device *port;
     //uint32_t pin;
 } machine_pin_obj_t;

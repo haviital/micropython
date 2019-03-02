@@ -36,6 +36,8 @@
 #include "gpio_api.h"
 #include "virtpin.h"
 
+#define PIN_ANALOG_INPUT    100
+
 const mp_obj_base_t machine_pin_obj_template = {&machine_pin_type};
 
 STATIC void machine_pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
@@ -67,9 +69,12 @@ STATIC mp_obj_t machine_pin_obj_init_helper(machine_pin_obj_t *self, size_t n_ar
 
     //int ret = gpio_pin_configure(self->port, self->pin, mode | pull);
     if( mode == PIN_INPUT )
-        gpio_init_in(self->gpio, self->pinNum);
-    else // PIN_OUTPUT
-        gpio_init_out(self->gpio, self->pinNum);
+        gpio_init_in((gpio_t*)(self->data), self->pinNum);
+    else if( mode == PIN_OUTPUT ) 
+        gpio_init_out((gpio_t*)(self->data), self->pinNum);
+    else if( mode == PIN_ANALOG_INPUT )
+        analogin_init((analogin_t*)(self->data), self->pinNum);        
+        
     //if (ret) {
     //    mp_raise_ValueError("invalid pin");
     //}
@@ -77,7 +82,7 @@ STATIC mp_obj_t machine_pin_obj_init_helper(machine_pin_obj_t *self, size_t n_ar
     // set initial value
     if (args[ARG_value].u_obj != MP_OBJ_NULL) {
         //(void)gpio_pin_write(self->port, self->pin, mp_obj_is_true(args[ARG_value].u_obj));
-        mp_hal_pin_write(self->gpio, mp_obj_is_true(args[ARG_value].u_obj));
+        mp_hal_pin_write((gpio_t*)(self->data), mp_obj_is_true(args[ARG_value].u_obj));
     }
     
     return mp_const_none;
@@ -104,9 +109,23 @@ mp_obj_t mp_pin_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, 
 
     machine_pin_obj_t *pin = m_new_obj(machine_pin_obj_t);
     pin->base = machine_pin_obj_template;
-    pin->gpio = gc_alloc(sizeof(gpio_t), false);  //!!HV LEAKS MEMORY. FIX THIS!
-    memset(pin->gpio, 0, sizeof(gpio_t));
-    pin->pinNum = wanted_pin;
+    pin->pinNum = wanted_pin;  
+    
+    // get io mode
+    uint mode = mp_obj_get_int(args[1]);
+    pin->mode = mode;
+
+    if( mode == PIN_INPUT || mode == PIN_OUTPUT)
+    {
+        pin->data = gc_alloc(sizeof(gpio_t), false);  //!!HV LEAKS MEMORY. FIX THIS!
+        memset(pin->data, 0, sizeof(gpio_t));  
+    }
+    else if( mode == PIN_ANALOG_INPUT )
+    {
+        pin->data = gc_alloc(sizeof(analogin_t), false);  //!!HV LEAKS MEMORY. FIX THIS!
+        memset(pin->data, 0, sizeof(analogin_t));  
+        
+    }
 
     if (n_args > 1 || n_kw > 0) {
         // pin mode given, so configure this GPIO
@@ -118,18 +137,47 @@ mp_obj_t mp_pin_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, 
     return (mp_obj_t)pin;
 }
 
+// Generic ioctl function called by virtpin.c. 
+STATIC mp_uint_t machine_pin_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_t arg, int *errcode) {
+    (void)errcode;
+    machine_pin_obj_t *self = self_in;
+
+    if (request == MP_PIN_READ) {
+        uint32_t pin_val = 0;
+        
+        if( self->mode == PIN_INPUT)
+        {
+            //(void)gpio_pin_read(self->port, self->pin, &pin_val);
+            pin_val = mp_hal_pin_read((gpio_t*)(self->data));
+        }
+        else if( self->mode == PIN_ANALOG_INPUT )
+        {
+            pin_val = analogin_read_u16((analogin_t*)(self->data));         
+        }
+    
+        return pin_val;
+        
+    } else if( request == MP_PIN_WRITE){
+        if( self->mode == PIN_OUTPUT)
+        {
+            //(void)gpio_pin_write(self->port, self->pin, mp_obj_is_true(args[0]));
+            mp_hal_pin_write((gpio_t*)(self->data), mp_obj_is_true(&arg));
+        }
+        
+        return 0;
+    }
+      
+    return -1;
+}
+
 // fast method for getting/setting pin value
 STATIC mp_obj_t machine_pin_call(mp_obj_t self_in, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     mp_arg_check_num(n_args, n_kw, 0, 1, false);
-    machine_pin_obj_t *self = self_in;
     if (n_args == 0) {
-        uint32_t pin_val;
-        //(void)gpio_pin_read(self->port, self->pin, &pin_val);
-        pin_val = mp_hal_pin_read(self->gpio);
-        return MP_OBJ_NEW_SMALL_INT(pin_val);
+        mp_uint_t value = machine_pin_ioctl(self_in, MP_PIN_READ, 0, NULL);   
+        return( MP_OBJ_NEW_SMALL_INT( value ));      
     } else {
-        //(void)gpio_pin_write(self->port, self->pin, mp_obj_is_true(args[0]));
-        mp_hal_pin_write(self->gpio, mp_obj_is_true(args[0]));
+        machine_pin_ioctl(self_in, MP_PIN_WRITE, mp_obj_get_int(args[0]), NULL);          
         return mp_const_none;
     }
 }
@@ -150,7 +198,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pin_value_obj, 1, 2, machine_
 STATIC mp_obj_t machine_pin_off(mp_obj_t self_in) {
     machine_pin_obj_t *self = self_in;
     //(void)gpio_pin_write(self->port, self->pin, 0);
-    mp_hal_pin_low(self->gpio);
+    mp_hal_pin_low((gpio_t*)(self->data));
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(machine_pin_off_obj, machine_pin_off);
@@ -159,29 +207,10 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(machine_pin_off_obj, machine_pin_off);
 STATIC mp_obj_t machine_pin_on(mp_obj_t self_in) {
     machine_pin_obj_t *self = self_in;
     //(void)gpio_pin_write(self->port, self->pin, 1);
-    mp_hal_pin_high(self->gpio);
+    mp_hal_pin_high((gpio_t*)(self->data));
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(machine_pin_on_obj, machine_pin_on);
-
-// Generic ioctl function called by virtpin.c. 
-STATIC mp_uint_t machine_pin_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_t arg, int *errcode) {
-    (void)errcode;
-    machine_pin_obj_t *self = self_in;
-
-    switch (request) {
-        case MP_PIN_READ: {
-            uint32_t pin_val;
-            pin_val = mp_hal_pin_read(self->gpio);
-            return pin_val;
-        }
-        case MP_PIN_WRITE: {
-            mp_hal_pin_write(self->gpio, arg);
-            return 0;
-        }
-    }
-    return -1;
-}
 
 // Pin class methods and constants.
 STATIC const mp_rom_map_elem_t machine_pin_locals_dict_table[] = {
@@ -194,6 +223,7 @@ STATIC const mp_rom_map_elem_t machine_pin_locals_dict_table[] = {
     // class constants
     { MP_ROM_QSTR(MP_QSTR_IN),        MP_ROM_INT(PIN_INPUT) },
     { MP_ROM_QSTR(MP_QSTR_OUT),       MP_ROM_INT(PIN_OUTPUT) },
+    { MP_ROM_QSTR(MP_QSTR_ANALOG_IN), MP_ROM_INT(PIN_ANALOG_INPUT) },
     { MP_ROM_QSTR(MP_QSTR_PULL_UP),   MP_ROM_INT(PullUp) },
     { MP_ROM_QSTR(MP_QSTR_PULL_DOWN), MP_ROM_INT(PullDown) },
     { MP_ROM_QSTR(MP_QSTR_EXT0),      MP_ROM_INT(EXT0) },
