@@ -62,6 +62,15 @@ typedef struct _mp_obj_eventtype_t {
     uint8_t key;
 } mp_obj_eventtype_t;
 
+// *** tilemap member data
+typedef struct _mp_obj_tilemap_t {
+    mp_obj_base_t base;
+    mp_obj_t buf_obj; // need to store this to prevent GC from reclaiming buf
+    void *buf;
+    void *tilemapPtr;
+    uint16_t widthInTiles, heightInTiles, stride;
+} mp_obj_tilemap_t;
+
 
 // *** Defines
 #define PYGAME_NOEVENT	(0)
@@ -561,10 +570,19 @@ const mp_obj_module_t mp_module_surface = {
 
 // *** display module
 
-STATIC mp_obj_t display_init(void) {
+STATIC mp_obj_t display_init(size_t n_args, const mp_obj_t *args) {
+    
+    // Is the screen buffer cleared after copied to the screen HW?
+    bool mustClearScreen = true;
+    if( n_args > 0 )
+    {
+        mustClearScreen = mp_obj_is_true(args[0]);
+        Pok_Display_init(mustClearScreen);
+    }
+    
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(display_init_obj, display_init);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(display_init_obj, 0, 1, display_init);
 
 STATIC mp_obj_t display_quit(void) {
     return mp_const_none;
@@ -618,7 +636,7 @@ STATIC mp_obj_t display_update(size_t n_args, const mp_obj_t *args) {
     }
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(display_update_obj, 0, 3, display_update);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(display_update_obj, 0, 4, display_update);
 
 STATIC mp_obj_t display_flip(void) {
 	bool doUpdate = false;
@@ -697,6 +715,128 @@ const mp_obj_module_t mp_module_display = {
     .globals = (mp_obj_dict_t*)&display_module_globals,
 };
 
+// *** Tilemap module
+
+// Create
+STATIC mp_obj_t tilemap_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
+
+	// Check params.
+	mp_arg_check_num(n_args, n_kw, 3, 3, false);
+
+	// Create member data
+    mp_obj_tilemap_t *o = m_new_obj(mp_obj_tilemap_t);
+    o->base.type = type;  // class
+    o->widthInTiles = mp_obj_get_int(args[0]);
+    o->heightInTiles = mp_obj_get_int(args[1]);
+
+	// bytebuffer argument
+    o->buf_obj = args[2];
+    mp_buffer_info_t bufinfo;
+    mp_get_buffer_raise(args[2], &bufinfo, MP_BUFFER_READ);
+    o->buf = bufinfo.buf;
+
+    // o->format = mp_obj_get_int(args[3]);
+    // if (n_args >= 5) {
+        // o->stride = mp_obj_get_int(args[4]);
+    // } else {
+    o->stride = o->widthInTiles;
+    // }
+
+    // Create the class in PokittoLib
+    o->tilemapPtr = Pok_ConstructMap();
+    Pok_SetMap( o->tilemapPtr, o->widthInTiles, o->heightInTiles, o->buf );
+    
+    return MP_OBJ_FROM_PTR(o);
+ }
+
+ STATIC mp_obj_t tilemap_destroy(mp_obj_t self_in) {
+    mp_obj_tilemap_t *self = self_in;
+    Pok_DestroyMap( self->tilemapPtr );
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(tilemap_destroy_obj, tilemap_destroy);
+
+// Get buffer
+STATIC mp_int_t tilemap_get_buffer(mp_obj_t self_in, mp_buffer_info_t *bufinfo, mp_uint_t flags) {
+    (void)flags;
+    mp_obj_tilemap_t *self = MP_OBJ_TO_PTR(self_in);
+    bufinfo->buf = self->buf;
+    bufinfo->len = self->stride * self->heightInTiles / 2;  // 4-bit tile index
+    bufinfo->typecode = 'B'; // view framebuf as bytes
+    return 0;
+}
+
+// Setup the tilemap.
+STATIC mp_obj_t tilemap_set_tile(size_t n_args, const mp_obj_t *args) {
+
+    mp_obj_tilemap_t *self = MP_OBJ_TO_PTR(args[0]);
+    mp_int_t index = mp_obj_get_int(args[1]);
+    mp_int_t width = mp_obj_get_int(args[2]);
+    mp_int_t height = mp_obj_get_int(args[3]);
+    mp_obj_t buf_obj = args[4];
+    mp_buffer_info_t bufinfo;
+    mp_get_buffer_raise(buf_obj, /*OUT*/&bufinfo, MP_BUFFER_READ);
+    Pok_SetTile( self->tilemapPtr, index, width, height, bufinfo.buf);
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(tilemap_set_tile_obj, 5, 5, tilemap_set_tile);
+
+/*
+// Setup the tilemap.
+STATIC mp_obj_t tilemap_set(size_t n_args, const mp_obj_t *args) {
+
+    mp_obj_tilemap_t *self = MP_OBJ_TO_PTR(args[0]);
+    self->widthInTiles = mp_obj_get_int(args[1]);
+    self->heightInTiles = mp_obj_get_int(args[2]);
+    self->buf_obj = args[3];
+    mp_buffer_info_t bufinfo;
+    mp_get_buffer_raise(args[3], &bufinfo, MP_BUFFER_READ);
+    self->buf = bufinfo.buf;
+    Pok_SetMap( self->tilemapPtr, self->widthInTiles, self->heightInTiles, self->buf )
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(tilemap_set_obj, 4, 4, tilemap_set);
+*/
+
+// Draw the tilemap.
+STATIC mp_obj_t tilemap_draw(size_t n_args, const mp_obj_t *args) {
+
+    mp_obj_tilemap_t *self = MP_OBJ_TO_PTR(args[0]);
+    mp_int_t x = mp_obj_get_int(args[1]);
+    mp_int_t y = mp_obj_get_int(args[2]);
+	Pok_DrawMap( self->tilemapPtr,  x, y );
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(tilemap_draw_obj, 3, 3, tilemap_draw);
+
+STATIC const mp_rom_map_elem_t tilemap_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&tilemap_destroy_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_tile), MP_ROM_PTR(&tilemap_set_tile_obj) },
+    //{ MP_ROM_QSTR(MP_QSTR_set), MP_ROM_PTR(&tilemap_set_obj) },
+    { MP_ROM_QSTR(MP_QSTR_draw), MP_ROM_PTR(&tilemap_draw_obj) },
+};
+STATIC MP_DEFINE_CONST_DICT(tilemap_locals_dict, tilemap_locals_dict_table);
+
+STATIC const mp_obj_type_t mp_type_tilemap = {
+    { &mp_type_type },
+    .name = MP_QSTR_Tilemap,
+    .make_new = tilemap_make_new,
+    .buffer_p = { .get_buffer = tilemap_get_buffer },
+    .locals_dict = (mp_obj_dict_t*)&tilemap_locals_dict,
+};
+
+STATIC const mp_rom_map_elem_t tilemap_module_globals_table[] = {
+    { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_tilemap) },  // tilemap module name
+    { MP_ROM_QSTR(MP_QSTR_Tilemap), MP_ROM_PTR(&mp_type_tilemap) },
+ };
+
+STATIC MP_DEFINE_CONST_DICT(tilemap_module_globals, tilemap_module_globals_table);
+
+const mp_obj_module_t mp_module_tilemap = {
+    .base = { &mp_type_module },
+    .globals = (mp_obj_dict_t*)&tilemap_module_globals,
+};
+
 // *** upygame module
 
 STATIC const mp_rom_map_elem_t pygame_module_globals_table[] = {
@@ -707,6 +847,7 @@ STATIC const mp_rom_map_elem_t pygame_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_surface), MP_ROM_PTR(&mp_module_surface) },  	// surface module
     { MP_ROM_QSTR(MP_QSTR_event), MP_ROM_PTR(&mp_module_event) },  		// event module
     { MP_ROM_QSTR(MP_QSTR_mixer), MP_ROM_PTR(&mp_module_mixer) },  	// Audio Mixer module
+    { MP_ROM_QSTR(MP_QSTR_tilemap), MP_ROM_PTR(&mp_module_tilemap) },  	// surface module
 
     // Classes
     { MP_ROM_QSTR(MP_QSTR_Rect), MP_ROM_PTR(&mp_type_rect) },	// Event class
