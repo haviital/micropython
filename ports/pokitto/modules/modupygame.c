@@ -766,7 +766,7 @@ STATIC mp_int_t tilemap_get_buffer(mp_obj_t self_in, mp_buffer_info_t *bufinfo, 
     return 0;
 }
 
-// Setup the tilemap.
+// Setup the tile.
 STATIC mp_obj_t tilemap_set_tile(size_t n_args, const mp_obj_t *args) {
 
     mp_obj_tilemap_t *self = MP_OBJ_TO_PTR(args[0]);
@@ -780,6 +780,48 @@ STATIC mp_obj_t tilemap_set_tile(size_t n_args, const mp_obj_t *args) {
 	return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(tilemap_set_tile_obj, 5, 5, tilemap_set_tile);
+
+// Get the tile under the given x and y.
+STATIC mp_obj_t tilemap_get_tile_id(size_t n_args, const mp_obj_t *args) {
+
+    mp_obj_tilemap_t *self = MP_OBJ_TO_PTR(args[0]);
+    mp_int_t x = mp_obj_get_int(args[1]);
+    mp_int_t y = mp_obj_get_int(args[2]);
+    mp_int_t tileSize = mp_obj_get_int(args[3]);
+    uint8_t tileId = Pok_GetTileId( self->tilemapPtr, x, y, tileSize );
+	return mp_obj_new_int(tileId);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(tilemap_get_tile_id_obj, 4, 4, tilemap_get_tile_id);
+
+// Get the tile under the given x and y.
+STATIC mp_obj_t tilemap_get_tile_ids(size_t n_args, const mp_obj_t *args) {
+
+    // Parse parameters.
+    mp_obj_tilemap_t *self = MP_OBJ_TO_PTR(args[0]);
+    mp_int_t tlx = mp_obj_get_int(args[1]);
+    mp_int_t tly = mp_obj_get_int(args[2]);
+    mp_int_t brx = mp_obj_get_int(args[3]);
+    mp_int_t bry = mp_obj_get_int(args[4]);
+    mp_int_t tileSize = mp_obj_get_int(args[5]);
+    
+    // Call PokittoLib.
+    uint8_t tileIdTl;
+    uint8_t tileIdTr;
+    uint8_t tileIdBl;
+    uint8_t tileIdBr;
+    Pok_GetTileIds( self->tilemapPtr, tlx, tly, brx, bry, tileSize,
+                        /*OUT*/ &tileIdTl, &tileIdTr, &tileIdBl, &tileIdBr );
+                        
+    // Return list of 4 ids.
+    mp_obj_t result = mp_obj_new_list(0, NULL);
+    mp_obj_list_append(result, mp_obj_new_int(tileIdTl));
+    mp_obj_list_append(result, mp_obj_new_int(tileIdTr));
+    mp_obj_list_append(result, mp_obj_new_int(tileIdBl));
+    mp_obj_list_append(result, mp_obj_new_int(tileIdBr));
+
+    return result;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(tilemap_get_tile_ids_obj, 6, 6, tilemap_get_tile_ids);
 
 /*
 // Setup the tilemap.
@@ -812,6 +854,8 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(tilemap_draw_obj, 3, 3, tilemap_draw)
 STATIC const mp_rom_map_elem_t tilemap_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&tilemap_destroy_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_tile), MP_ROM_PTR(&tilemap_set_tile_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_tile_id), MP_ROM_PTR(&tilemap_get_tile_id_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_tile_ids), MP_ROM_PTR(&tilemap_get_tile_ids_obj) },
     //{ MP_ROM_QSTR(MP_QSTR_set), MP_ROM_PTR(&tilemap_set_obj) },
     { MP_ROM_QSTR(MP_QSTR_draw), MP_ROM_PTR(&tilemap_draw_obj) },
 };

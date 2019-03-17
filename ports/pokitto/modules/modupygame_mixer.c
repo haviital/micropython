@@ -198,6 +198,32 @@ STATIC mp_obj_t sound_play(size_t n_args, const mp_obj_t *args) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(sound_play_obj, 1, 1, sound_play);
 
+// Play a stream from SD
+STATIC mp_obj_t sound_play_from_sd(size_t n_args, const mp_obj_t *args) {
+
+    char *str = (char *)mp_obj_str_get_str(args[1]);
+    Pok_Sound_PlayMusicFromSD(str);
+
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(sound_play_from_sd_obj, 2, 2, sound_play_from_sd);
+
+// Play a sound effect.
+STATIC mp_obj_t sound_play_sfx(size_t n_args, const mp_obj_t *args) {
+
+    //mp_obj_sound_t *self = MP_OBJ_TO_PTR(args[0]);
+    mp_obj_t buf_obj = args[1];
+    uint16_t len = mp_obj_get_int(args[2]);
+    mp_buffer_info_t bufinfo;
+    mp_get_buffer_raise(buf_obj, &bufinfo, MP_BUFFER_READ);
+    bool is4bitSample = mp_obj_is_true(args[3]);
+    
+    Pok_Sound_playSFX(bufinfo.buf, len, is4bitSample);
+
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(sound_play_sfx_obj, 4, 4, sound_play_sfx);
+
 // Sound.pause()
 STATIC mp_obj_t sound_pause(size_t n_args, const mp_obj_t *args) {
 
@@ -217,6 +243,8 @@ STATIC const mp_rom_map_elem_t sound_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_get_current_soundbuffer_pos), MP_ROM_PTR(&sound_get_current_soundbuffer_pos_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_soundbuffer_size), MP_ROM_PTR(&sound_get_soundbuffer_size_obj) },
     { MP_ROM_QSTR(MP_QSTR_play), MP_ROM_PTR(&sound_play_obj) },
+    { MP_ROM_QSTR(MP_QSTR_play_from_sd), MP_ROM_PTR(&sound_play_from_sd_obj) },
+    { MP_ROM_QSTR(MP_QSTR_play_sfx), MP_ROM_PTR(&sound_play_sfx_obj) },
     { MP_ROM_QSTR(MP_QSTR_pause), MP_ROM_PTR(&sound_pause_obj) },
 };
 STATIC MP_DEFINE_CONST_DICT(sound_locals_dict, sound_locals_dict_table);
