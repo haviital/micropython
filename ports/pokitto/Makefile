@@ -53,7 +53,8 @@ ifeq ($(DEBUG), 1)
 CFLAGS += -Og -ggdb3
 else
 #CFLAGS += -Os -DNDEBUG
-CFLAGS += -O3 -DNDEBUG
+#CFLAGS += -O3 -DNDEBUG
+CFLAGS += -O2 -DNDEBUG
 CFLAGS += -fdata-sections -ffunction-sections
 endif
 
