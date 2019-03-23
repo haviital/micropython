@@ -32,14 +32,21 @@
 #include "py/runtime.h"
 #include "py/gc.h"
 #include "py/mphal.h"
+
 #include "modmachine.h"
+
+#if !POKITTO_USE_WIN_SIMULATOR
 #include "gpio_api.h"
 #include "virtpin.h"
+#endif
 
 #define PIN_ANALOG_INPUT    100
 
 const mp_obj_base_t machine_pin_obj_template = {&machine_pin_type};
 
+
+// HW implementation
+    
 STATIC void machine_pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     machine_pin_obj_t *self = self_in;
     mp_printf(print, "<Pin %d>", self->pinNum);
@@ -58,6 +65,7 @@ STATIC mp_obj_t machine_pin_obj_init_helper(machine_pin_obj_t *self, size_t n_ar
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
+#if !POKITTO_USE_WIN_SIMULATOR
     // get io mode
     uint mode = args[ARG_mode].u_int;
 
@@ -84,7 +92,8 @@ STATIC mp_obj_t machine_pin_obj_init_helper(machine_pin_obj_t *self, size_t n_ar
         //(void)gpio_pin_write(self->port, self->pin, mp_obj_is_true(args[ARG_value].u_obj));
         mp_hal_pin_write((gpio_t*)(self->data), mp_obj_is_true(args[ARG_value].u_obj));
     }
-    
+ #endif   
+ 
     return mp_const_none;
 }
 
@@ -115,6 +124,7 @@ mp_obj_t mp_pin_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, 
     uint mode = mp_obj_get_int(args[1]);
     pin->mode = mode;
 
+#if !POKITTO_USE_WIN_SIMULATOR
     if( mode == PIN_INPUT || mode == PIN_OUTPUT)
     {
         pin->data = gc_alloc(sizeof(gpio_t), false);  //!!HV LEAKS MEMORY. FIX THIS!
@@ -133,13 +143,15 @@ mp_obj_t mp_pin_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, 
         mp_map_init_fixed_table(&kw_args, n_kw, args + n_args);
         machine_pin_obj_init_helper(pin, n_args - 1, args + 1, &kw_args);
     }
-
+#endif
     return (mp_obj_t)pin;
 }
 
 // Generic ioctl function called by virtpin.c. 
 STATIC mp_uint_t machine_pin_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_t arg, int *errcode) {
     (void)errcode;
+    
+#if !POKITTO_USE_WIN_SIMULATOR
     machine_pin_obj_t *self = self_in;
 
     if (request == MP_PIN_READ) {
@@ -154,7 +166,6 @@ STATIC mp_uint_t machine_pin_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_
         {
             pin_val = analogin_read_u16((analogin_t*)(self->data));         
         }
-    
         return pin_val;
         
     } else if( request == MP_PIN_WRITE){
@@ -166,6 +177,7 @@ STATIC mp_uint_t machine_pin_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_
         
         return 0;
     }
+#endif    
       
     return -1;
 }
@@ -196,18 +208,22 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_pin_value_obj, 1, 2, machine_
 
 // Sets the pin off.
 STATIC mp_obj_t machine_pin_off(mp_obj_t self_in) {
+#if !POKITTO_USE_WIN_SIMULATOR
     machine_pin_obj_t *self = self_in;
     //(void)gpio_pin_write(self->port, self->pin, 0);
     mp_hal_pin_low((gpio_t*)(self->data));
+#endif
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(machine_pin_off_obj, machine_pin_off);
 
 // Sets the pin on.
 STATIC mp_obj_t machine_pin_on(mp_obj_t self_in) {
+#if !POKITTO_USE_WIN_SIMULATOR
     machine_pin_obj_t *self = self_in;
     //(void)gpio_pin_write(self->port, self->pin, 1);
     mp_hal_pin_high((gpio_t*)(self->data));
+#endif
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(machine_pin_on_obj, machine_pin_on);

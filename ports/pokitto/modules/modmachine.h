@@ -28,6 +28,36 @@
 #define EXT16	P1_27
 #define EXT17	P0_16
 
+#else
+    
+// Not used. Just set some values...
+
+#define EXT0 	0
+#define EXT1	1
+#define EXT2	2
+#define EXT3	3
+#define EXT4	4
+#define EXT5	5
+#define EXT6	6
+#define EXT7	7
+#define EXT8	8
+#define EXT9	9
+#define EXT10	10
+#define EXT11	11
+#define EXT12	12
+#define EXT13	13
+#define EXT14	14
+#define EXT15	15
+#define EXT16	16
+#define EXT17	17
+
+#define PIN_INPUT 1
+#define PIN_OUTPUT 2
+#define PullUp 3
+#define PullDown 4
+
+#endif // POKITTO_USE_WIN_SIMULATOR
+
 
 extern const mp_obj_type_t machine_pin_type;
 
@@ -42,6 +72,5 @@ typedef struct _machine_pin_obj_t {
     //uint32_t pin;
 } machine_pin_obj_t;
 
-#endif // POKITTO_USE_WIN_SIMULATOR
 
 #endif // MICROPY_INCLUDED_POKITTO_MODMACHINE_H

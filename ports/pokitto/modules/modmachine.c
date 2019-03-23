@@ -147,9 +147,7 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
 
     { MP_ROM_QSTR(MP_QSTR_PinBase), MP_ROM_PTR(&machine_pinbase_type) },
 	{ MP_ROM_QSTR(MP_QSTR_Signal), MP_ROM_PTR(&machine_signal_type) },
-    #if !POKITTO_USE_WIN_SIMULATOR
     { MP_ROM_QSTR(MP_QSTR_Pin), MP_ROM_PTR(&machine_pin_type) },
-    #endif
 	{ MP_ROM_QSTR(MP_QSTR_blit_framebuf), MP_ROM_PTR(&mod_machine_blit_framebuf_obj) },
 	//{ MP_ROM_QSTR(MP_QSTR_buttons_repeat), MP_ROM_PTR(&mod_machine_buttons_repeat_obj) },
 	{ MP_ROM_QSTR(MP_QSTR_draw_text), MP_ROM_PTR(&mod_machine_draw_text_obj) },

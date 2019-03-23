@@ -37,6 +37,7 @@ SRC_C = \
 	ports/unix/input.c \
 	ports/unix/modos.c \
 	ports/pokitto/modules/modmachine.c \
+	ports/pokitto/modules/machine_pin.c \
 	ports/pokitto/modules/modupygame.c \
 	ports/pokitto/modules/modupygame_mixer.c \
 	ports/unix/modtime.c \

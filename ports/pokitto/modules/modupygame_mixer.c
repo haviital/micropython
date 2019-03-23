@@ -89,9 +89,11 @@ STATIC mp_obj_t sound_make_new(const mp_obj_type_t *type, size_t n_args, size_t 
 
     //sound_fill_buffer_helper(o, n_args, args);
 
-    //Pok_Sound_Reset();
+    // Reset the stream ans start to play empty stream.
+    Pok_Sound_Reset();
+    Pok_Sound_Play();
 
-       /*
+     /*
 	 // bytebuffer argument
      o->buf_obj = args[0];
      o->len = mp_obj_get_int(args[1]);
