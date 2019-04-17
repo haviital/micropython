@@ -102,7 +102,7 @@ STATIC mp_obj_t mod_machine_blit_framebuf(size_t n_args, const mp_obj_t *args) {
 
 	//TODO: take source->stride into account also
 	//TODO: check that source->format is acceptable
-	Pok_Display_blitFrameBuffer(x, y, source->width, source->height, key, source->buf);
+    Pok_Display_blitFrameBuffer(x, y, source->width, source->height, false, false, key, source->buf);
 	return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_machine_blit_framebuf_obj, 3, 4, mod_machine_blit_framebuf);

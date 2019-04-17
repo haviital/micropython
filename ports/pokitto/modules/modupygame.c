@@ -436,14 +436,16 @@ STATIC mp_obj_t surface_fill(size_t n_args, const mp_obj_t *args) {
 
     mp_obj_surface_t *self = MP_OBJ_TO_PTR(args[0]);
     mp_int_t color = mp_obj_get_int(args[1]);
+    if(color>=0)
+        Pok_Display_setForegroundColor(color);
     if(n_args > 2) {
         // fill the rect with the color
         mp_obj_rect_t *rect = MP_OBJ_TO_PTR(args[2]);
-        Pok_Display_fillRectangle(rect->x, rect->y, rect->w, rect->h, color);
+        Pok_Display_fillRectangle(rect->x, rect->y, rect->w, rect->h);
     }
     else {
         // fill the whole screen  with the color
-        Pok_Display_fillRectangle(0, 0, self->width, self->height, color);
+        Pok_Display_fillRectangle(0, 0, self->width, self->height);
     }
 
 	return mp_const_none;
@@ -460,13 +462,20 @@ STATIC mp_obj_t surface_blit(size_t n_args, const mp_obj_t *args) {
     mp_int_t transparentColor = 0;
     if( n_args > 4)
         transparentColor = mp_obj_get_int(args[4]);
+    bool isFlipH = false;
+    if( n_args > 5)
+        isFlipH = mp_obj_is_true(args[5]);
+    bool isFlipV = false;
+    if( n_args > 6)
+        isFlipV = mp_obj_is_true(args[6]);
 
 	//TODO: take source->stride into account also
 	//TODO: check that source->format is acceptable
-	Pok_Display_blitFrameBuffer(x, y, source->width, source->height, transparentColor, source->buf);
+    Pok_Display_blitFrameBuffer(x, y, source->width, source->height, isFlipH, isFlipV, transparentColor, source->buf);
+
 	return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(surface_blit_obj, 4, 5, surface_blit);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(surface_blit_obj, 4, 7, surface_blit);
 
 STATIC mp_obj_t surface_setHwSprite(size_t n_args, const mp_obj_t *args) {
 
@@ -566,6 +575,139 @@ STATIC MP_DEFINE_CONST_DICT(surface_module_globals, surface_module_globals_table
 const mp_obj_module_t mp_module_surface = {
     .base = { &mp_type_module },
     .globals = (mp_obj_dict_t*)&surface_module_globals,
+};
+
+// *** draw module
+
+STATIC mp_obj_t draw_rect(size_t n_args, const mp_obj_t *args) {
+
+    mp_obj_rect_t *rect = MP_OBJ_TO_PTR(args[0]);
+    bool isFilled = mp_obj_is_true(args[1]);
+    if(n_args>2)
+    {
+        mp_int_t color = mp_obj_get_int(args[2]);
+        Pok_Display_setForegroundColor(color);
+    }
+    if(isFilled)
+        Pok_Display_fillRectangle(rect->x, rect->y, rect->w, rect->h);
+    else
+        Pok_Display_drawRectangle(rect->x, rect->y, rect->w, rect->h);
+
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(draw_rect_obj, 2, 3, draw_rect);
+
+STATIC mp_obj_t draw_circle(size_t n_args, const mp_obj_t *args) {
+
+    mp_int_t x = mp_obj_get_int(args[0]);
+    mp_int_t y = mp_obj_get_int(args[1]);
+    mp_int_t r = mp_obj_get_int(args[2]);
+    bool isFilled = mp_obj_is_true(args[3]);
+    if(n_args>4)
+    {
+        mp_int_t color = mp_obj_get_int(args[4]);
+        Pok_Display_setForegroundColor(color);
+    }
+    if(isFilled)
+        Pok_Display_fillCircle(x, y, r);
+    else
+        Pok_Display_drawCircle(x, y, r);
+
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(draw_circle_obj, 4, 5, draw_circle);
+
+STATIC mp_obj_t draw_line(size_t n_args, const mp_obj_t *args) {
+
+    mp_int_t x0 = mp_obj_get_int(args[0]);
+    mp_int_t y0 = mp_obj_get_int(args[1]);
+    mp_int_t x1 = mp_obj_get_int(args[2]);
+    mp_int_t y1 = mp_obj_get_int(args[3]);
+    if(n_args>4)
+    {
+        mp_int_t color = mp_obj_get_int(args[4]);
+        Pok_Display_setForegroundColor(color);
+    }
+    Pok_Display_drawLine(x0,y0,x1,y1);
+
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(draw_line_obj, 4, 5, draw_line);
+
+STATIC mp_obj_t draw_pixel(size_t n_args, const mp_obj_t *args) {
+
+    mp_int_t x0 = mp_obj_get_int(args[0]);
+    mp_int_t y0 = mp_obj_get_int(args[1]);
+    if(n_args>2)
+    {
+        mp_int_t color = mp_obj_get_int(args[2]);
+        Pok_Display_setForegroundColor(color);
+    }
+    Pok_Display_drawPixel(x0, y0);
+
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(draw_pixel_obj, 2, 3, draw_pixel);
+
+STATIC mp_obj_t draw_text(size_t n_args, const mp_obj_t *args) {
+    
+	mp_int_t x = mp_obj_get_int(args[0]);
+	mp_int_t y = mp_obj_get_int(args[1]);
+    const char *str = mp_obj_str_get_str(args[2]);
+    mp_int_t color = -1;
+    if(n_args>3)
+    {
+        color = mp_obj_get_int(args[3]);
+        Pok_Display_setForegroundColor(color);
+    }
+	Pok_Display_print(x, y, str, color);
+    
+
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(draw_text_obj, 3, 4, draw_text);
+
+STATIC mp_obj_t draw_set_foreground_color(size_t n_args, const mp_obj_t *args) {
+    
+    mp_int_t color = mp_obj_get_int(args[0]);
+    Pok_Display_setForegroundColor(color);
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(draw_set_foreground_color_obj, 1, 1, draw_set_foreground_color);
+
+STATIC mp_obj_t draw_set_background_color(size_t n_args, const mp_obj_t *args) {
+    
+    mp_int_t color = mp_obj_get_int(args[0]);
+    Pok_Display_setBackgroundColor(color);
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(draw_set_background_color_obj, 1, 1, draw_set_background_color);
+
+STATIC mp_obj_t draw_set_transparent_color(size_t n_args, const mp_obj_t *args) {
+    
+    mp_int_t color = mp_obj_get_int(args[0]);
+    Pok_Display_setInvisibleColor(color);
+	return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(draw_set_transparent_color_obj, 1, 1, draw_set_transparent_color);
+
+STATIC const mp_rom_map_elem_t draw_module_globals_table[] = {
+    { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_draw) },  // display module name
+    { MP_ROM_QSTR(MP_QSTR_rect), MP_ROM_PTR(&draw_rect_obj) },
+    { MP_ROM_QSTR(MP_QSTR_circle), MP_ROM_PTR(&draw_circle_obj) },
+    { MP_ROM_QSTR(MP_QSTR_line), MP_ROM_PTR(&draw_line_obj) },
+    { MP_ROM_QSTR(MP_QSTR_pixel), MP_ROM_PTR(&draw_pixel_obj) },
+    { MP_ROM_QSTR(MP_QSTR_text), MP_ROM_PTR(&draw_text_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_foreground_color), MP_ROM_PTR(&draw_set_foreground_color_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_background_color), MP_ROM_PTR(&draw_set_background_color_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_transparent_color), MP_ROM_PTR(&draw_set_transparent_color_obj) },
+ };
+
+STATIC MP_DEFINE_CONST_DICT(draw_module_globals, draw_module_globals_table);
+
+const mp_obj_module_t mp_module_draw = {
+    .base = { &mp_type_module },
+    .globals = (mp_obj_dict_t*)&draw_module_globals,
 };
 
 // *** display module
@@ -889,9 +1031,10 @@ STATIC const mp_rom_map_elem_t pygame_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_upygame) },  	// pygame module name
     { MP_ROM_QSTR(MP_QSTR_display), MP_ROM_PTR(&mp_module_display) },  	// display module
     { MP_ROM_QSTR(MP_QSTR_surface), MP_ROM_PTR(&mp_module_surface) },  	// surface module
+    { MP_ROM_QSTR(MP_QSTR_draw), MP_ROM_PTR(&mp_module_draw) },  	// draw module
     { MP_ROM_QSTR(MP_QSTR_event), MP_ROM_PTR(&mp_module_event) },  		// event module
     { MP_ROM_QSTR(MP_QSTR_mixer), MP_ROM_PTR(&mp_module_mixer) },  	// Audio Mixer module
-    { MP_ROM_QSTR(MP_QSTR_tilemap), MP_ROM_PTR(&mp_module_tilemap) },  	// surface module
+    { MP_ROM_QSTR(MP_QSTR_tilemap), MP_ROM_PTR(&mp_module_tilemap) },  	// tilemap module
 
     // Classes
     { MP_ROM_QSTR(MP_QSTR_Rect), MP_ROM_PTR(&mp_type_rect) },	// Event class
