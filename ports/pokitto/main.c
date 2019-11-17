@@ -32,8 +32,7 @@ static char *stack_top;
 
 // If Pokitto uses bigger hires buffer (220x176x4bpp), we must allocate less heap to Python.
 #if POKITTO_USE_HIRES_BUFFER
-//static char heap[1024*13];
-static char heap[1024*14];
+static char heap[1024*13];
 #else
 static char heap[2048*10];
 #endif

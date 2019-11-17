@@ -14,6 +14,12 @@ Build using:
 
     make CROSS_COMPILE=i686-w64-mingw32- lib
     
+Or (verbose and debug) use:
+    make CROSS_COMPILE=i686-w64-mingw32- V=1 DEBUG=1 lib
+
+To clean up use:
+     make CROSS_COMPILE=i686-w64-mingw32- clean
+   
 
 Building mpy-cross (if needed)
 ------------------------------

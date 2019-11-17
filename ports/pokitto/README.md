@@ -18,6 +18,16 @@ for communication.  To build:
 
     make CROSS=1 lib
     
+Or to build with verbose info:
+
+    make CROSS=1 V=1 lib
+
+Or to clean build:
+
+    make CROSS=1 clean
+
+   
+    
 Pokitto related configuration
 -----------------------------
 

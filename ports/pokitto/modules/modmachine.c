@@ -60,6 +60,16 @@ typedef struct _mp_obj_framebuf_t {
 	uint8_t format;
 } mp_obj_framebuf_t;
 
+// *** cookie member data
+typedef struct _mp_obj_cookie_t {
+    mp_obj_base_t base;
+    mp_obj_t buf_obj; // need to store this to prevent GC from reclaiming buf
+    void *buf;
+    uint16_t len;
+    void* cookiePtr;
+} mp_obj_cookie_t;
+
+
 uintptr_t mod_machine_mem_get_addr(mp_obj_t addr_o, uint align) {
     uintptr_t addr = mp_obj_int_get_truncated(addr_o);
     if ((addr & (align - 1)) != 0) {
@@ -138,6 +148,107 @@ STATIC mp_obj_t mod_machine_time_ms(void) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_machine_time_ms_obj, mod_machine_time_ms);
 
+// *** Cookie module
+
+// Create
+STATIC mp_obj_t cookie_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
+
+	// Check params.
+	mp_arg_check_num(n_args, n_kw, 2, 2, false);
+
+	// Create the member data
+    mp_obj_cookie_t *o = m_new_obj(mp_obj_cookie_t);
+    o->base.type = type;  // class
+    
+    // Cookie name
+    const char *name = mp_obj_str_get_str(args[0]);
+
+	// bytebuffer argument
+    o->buf_obj = args[1];
+    mp_buffer_info_t bufinfo;
+    mp_get_buffer_raise(args[1], &bufinfo, MP_BUFFER_WRITE);
+    o->buf = bufinfo.buf;
+    o->len = bufinfo.len;
+    
+    // Create the class in PokittoLib
+    o->cookiePtr = Pok_CreateCookie( (char*)name, o->buf, o->len );
+    
+    return MP_OBJ_FROM_PTR(o);
+ }
+
+ STATIC mp_obj_t cookie_destroy(mp_obj_t self_in) {
+    mp_obj_cookie_t *self = self_in;
+    Pok_DeleteCookie( self->cookiePtr );
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(cookie_destroy_obj, cookie_destroy);
+
+// Get buffer
+STATIC mp_int_t cookie_get_buffer(mp_obj_t self_in, mp_buffer_info_t *bufinfo, mp_uint_t flags) {
+    (void)flags;
+    mp_obj_cookie_t *self = MP_OBJ_TO_PTR(self_in);
+    bufinfo->buf = self->buf;
+    bufinfo->len = self->len;
+    bufinfo->typecode = 'B'; // view framebuf as bytes
+    return 0;
+}
+
+// Load the cookie and return the content.
+STATIC mp_obj_t cookie_load(size_t n_args, const mp_obj_t *args)
+{
+    // Load the cookie from EEPROM
+    mp_obj_cookie_t *self = MP_OBJ_TO_PTR(args[0]);
+	Pok_LoadCookie(self->cookiePtr);
+    
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(cookie_load_obj, 1, 1, cookie_load);
+
+// Save the cookie and return the content.
+STATIC mp_obj_t cookie_save(size_t n_args, const mp_obj_t *args) {
+
+    mp_obj_cookie_t *self = MP_OBJ_TO_PTR(args[0]);
+    
+    // Save the cookie to the EEPROM.
+	Pok_SaveCookie(self->cookiePtr);
+
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(cookie_save_obj, 1, 1, cookie_save);
+
+// Cookie local table
+STATIC const mp_rom_map_elem_t cookie_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&cookie_destroy_obj) },
+    { MP_ROM_QSTR(MP_QSTR_load), MP_ROM_PTR(&cookie_load_obj) },
+    { MP_ROM_QSTR(MP_QSTR_save), MP_ROM_PTR(&cookie_save_obj) },
+};
+STATIC MP_DEFINE_CONST_DICT(cookie_locals_dict, cookie_locals_dict_table);
+
+// Cookie class
+STATIC const mp_obj_type_t mp_type_cookie = {
+    { &mp_type_type },
+    .name = MP_QSTR_Cookie,
+    .make_new = cookie_make_new,
+    .buffer_p = { .get_buffer = cookie_get_buffer },
+    .locals_dict = (mp_obj_dict_t*)&cookie_locals_dict,
+};
+
+// Cookie global table
+STATIC const mp_rom_map_elem_t cookie_module_globals_table[] = {
+    { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_cookie) },  // cookie module name
+    { MP_ROM_QSTR(MP_QSTR_Cookie), MP_ROM_PTR(&mp_type_cookie) },
+ };
+
+STATIC MP_DEFINE_CONST_DICT(cookie_module_globals, cookie_module_globals_table);
+
+// Cookie module
+const mp_obj_module_t mp_module_cookie = {
+    .base = { &mp_type_module },
+    .globals = (mp_obj_dict_t*)&cookie_module_globals,
+};
+
+// *** GLOBALS
+
 STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_umachine) },
 
@@ -156,6 +267,10 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
 #endif
  	{ MP_ROM_QSTR(MP_QSTR_wait), MP_ROM_PTR(&mod_machine_wait_obj) },
  	{ MP_ROM_QSTR(MP_QSTR_time_ms), MP_ROM_PTR(&mod_machine_time_ms_obj) },
+
+
+    // *** NODULES
+    { MP_ROM_QSTR(MP_QSTR_cookie), MP_ROM_PTR(&mp_module_cookie) },  	// cookie module
 };
 
 STATIC MP_DEFINE_CONST_DICT(machine_module_globals, machine_module_globals_table);
