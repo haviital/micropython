@@ -189,7 +189,7 @@ STATIC mp_int_t cookie_get_buffer(mp_obj_t self_in, mp_buffer_info_t *bufinfo, m
     mp_obj_cookie_t *self = MP_OBJ_TO_PTR(self_in);
     bufinfo->buf = self->buf;
     bufinfo->len = self->len;
-    bufinfo->typecode = 'B'; // view framebuf as bytes
+    bufinfo->typecode = 'B'; // view buffer as bytes
     return 0;
 }
 
@@ -225,26 +225,12 @@ STATIC const mp_rom_map_elem_t cookie_locals_dict_table[] = {
 STATIC MP_DEFINE_CONST_DICT(cookie_locals_dict, cookie_locals_dict_table);
 
 // Cookie class
-STATIC const mp_obj_type_t mp_type_cookie = {
+STATIC const mp_obj_type_t machine_cookie_type = {
     { &mp_type_type },
     .name = MP_QSTR_Cookie,
     .make_new = cookie_make_new,
     .buffer_p = { .get_buffer = cookie_get_buffer },
     .locals_dict = (mp_obj_dict_t*)&cookie_locals_dict,
-};
-
-// Cookie global table
-STATIC const mp_rom_map_elem_t cookie_module_globals_table[] = {
-    { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_cookie) },  // cookie module name
-    { MP_ROM_QSTR(MP_QSTR_Cookie), MP_ROM_PTR(&mp_type_cookie) },
- };
-
-STATIC MP_DEFINE_CONST_DICT(cookie_module_globals, cookie_module_globals_table);
-
-// Cookie module
-const mp_obj_module_t mp_module_cookie = {
-    .base = { &mp_type_module },
-    .globals = (mp_obj_dict_t*)&cookie_module_globals,
 };
 
 // *** GLOBALS
@@ -267,10 +253,7 @@ STATIC const mp_rom_map_elem_t machine_module_globals_table[] = {
 #endif
  	{ MP_ROM_QSTR(MP_QSTR_wait), MP_ROM_PTR(&mod_machine_wait_obj) },
  	{ MP_ROM_QSTR(MP_QSTR_time_ms), MP_ROM_PTR(&mod_machine_time_ms_obj) },
-
-
-    // *** NODULES
-    { MP_ROM_QSTR(MP_QSTR_cookie), MP_ROM_PTR(&mp_module_cookie) },  	// cookie module
+    { MP_ROM_QSTR(MP_QSTR_Cookie), MP_ROM_PTR(&machine_cookie_type) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(machine_module_globals, machine_module_globals_table);
