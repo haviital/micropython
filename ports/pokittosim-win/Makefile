@@ -19,7 +19,7 @@ INC += -I$(BUILD)
 INC += -I$(POKITTO_SIMULATOR_DIR)
 
 # compiler settings
-CFLAGS = $(INC) -Wall -Wpointer-arith -Werror -std=gnu99 -DUNIX -D__USE_MINGW_ANSI_STDIO=1 $(CFLAGS_MOD) $(COPT)
+CFLAGS = $(INC) -Wall -Wpointer-arith -Werror -m64 -std=gnu99 -DUNIX -D__USE_MINGW_ANSI_STDIO=1 $(CFLAGS_MOD) $(COPT)
 LDFLAGS = $(LDFLAGS_MOD) -lm
 
 # Debugging/Optimization

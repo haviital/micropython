@@ -31,46 +31,29 @@ void do_str(const char *src, mp_parse_input_kind_t input_kind) {
 static char *stack_top;
 
 // If Pokitto uses bigger hires buffer (220x176x4bpp), we must allocate less heap to Python.
-#if POKITTO_USE_HIRES_BUFFER
-static char heap[1024*13];
-#else
-static char heap[2048*10];
-#endif
+/* #if POKITTO_USE_HIRES_BUFFER */
+/* static char heap[1024*13]; */
+/* #else */
+/* static char heap[2048*10]; */
+/* #endif */
+static char *heap;
 
-int PythonMain(int argc, char **argv) {
+int PyInSkyMain( unsigned int heapSize, char *heapMem ){
     int stack_dummy;
     stack_top = (char*)&stack_dummy;
 
     mp_stack_set_top(stack_top);
 
+    heap = heapMem;
+
     #if MICROPY_ENABLE_GC
-    gc_init(heap, heap + sizeof(heap));
+    gc_init(heap, heap + heapSize);
     #endif
     mp_init();
 
-    if(argc<1) {
+    pyexec_frozen_module("main.py");
 
-        #if MICROPY_REPL_EVENT_DRIVEN
-        pyexec_event_repl_init();
-        for (;;) {
-            int c = mp_hal_stdin_rx_chr();
-            if (pyexec_event_repl_process_char(c)) {
-                break;
-            }
-        }
-        #else
-        pyexec_friendly_repl();
-        #endif  // MICROPY_REPL_EVENT_DRIVEN
-
-        //do_str("print('hello world!', list(x+1 for x in range(10)), end='eol\\n')", MP_PARSE_SINGLE_INPUT);
-        //do_str("for i in range(10):\r\n  print(i)", MP_PARSE_FILE_INPUT);
-
-    } else {
-
-        pyexec_frozen_module(argv[1]);
-    }
-
-    mp_deinit();
+    // mp_deinit();
     return 0;
 }
 

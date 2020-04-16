@@ -73,6 +73,7 @@ typedef struct _mp_obj_tilemap_t {
 
 
 // *** Defines
+
 #define PYGAME_NOEVENT	(0)
 #define PYGAME_KEYDOWN  (1)
 #define PYGAME_KEYUP    (2)
@@ -87,6 +88,15 @@ typedef struct _mp_obj_tilemap_t {
 #define PYGAME_K_ABUT    (11)
 #define PYGAME_K_BBUT    (12)
 #define PYGAME_K_CBUT    (13)
+
+#define PYGAME_TAS_TILE_EMPTY           (0)
+#define PYGAME_TAS_RIGHT_ARROW_TILE     (1)
+#define PYGAME_TAS_LEFT_ARROW_TILE      (2)
+#define PYGAME_TAS_UP_ARROW_TILE        (3)
+#define PYGAME_TAS_DOWN_ARROW_TILE      (4)
+#define PYGAME_TAS_UNCHECKED_TILE       (22)
+#define PYGAME_TAS_CHECKED_TILE         (23)
+#define PYGAME_TAS_SPACE_TILE           (32)
 
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
@@ -477,58 +487,6 @@ STATIC mp_obj_t surface_blit(size_t n_args, const mp_obj_t *args) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(surface_blit_obj, 4, 7, surface_blit);
 
-STATIC mp_obj_t surface_setHwSprite(size_t n_args, const mp_obj_t *args) {
-
-    mp_int_t index = mp_obj_get_int(args[3]);
-
-	if(args[1] == mp_const_none) {
-        Pok_Display_setSprite(index, 0, 0, 0, 0, 0, NULL, NULL, false);
-        return mp_const_none;
-    }
-
-    // Get source surface.
-    mp_obj_surface_t *source = MP_OBJ_TO_PTR(args[1]);
-
-    // Create the array of 16-bit ints from the list.
-    mp_obj_list_t *aListOfInts = MP_OBJ_TO_PTR(args[2]);
-    uint16_t palette16x16bit[16];
-    for(int i = 0; i < 16; i++) {
-        uint16_t color16bit = 0;
-        if (i < aListOfInts->len)
-            color16bit = mp_obj_get_int(aListOfInts->items[i]);
-        palette16x16bit[i] = color16bit;
-    }
-
-    mp_int_t x = mp_obj_get_int(args[4]);
-    mp_int_t y = mp_obj_get_int(args[5]);
-    bool doResetDirtyRect = mp_obj_is_true(args[6]);
-
-    //mp_obj_bool_t *self = MP_OBJ_TO_PTR(self_in);
-    mp_int_t transparentColor = 0;
-    if( n_args > 7)
-        transparentColor = mp_obj_get_int(args[7]);
-
-	//TODO: take source->stride into account also
-	//TODO: check that source->format is acceptable
-	Pok_Display_setSprite(index, x, y, source->width, source->height, transparentColor, source->buf, palette16x16bit, doResetDirtyRect);
-
-	return mp_const_none;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(surface_setHwSprite_obj, 7, 8, surface_setHwSprite);
-
-STATIC mp_obj_t surface_setHwSpritePos(size_t n_args, const mp_obj_t *args) {
-
-    mp_int_t index = mp_obj_get_int(args[1]);
-    mp_int_t x = mp_obj_get_int(args[2]);
-    mp_int_t y = mp_obj_get_int(args[3]);
-
-	//TODO: take source->stride into account also
-	//TODO: check that source->format is acceptable
-	Pok_Display_setSpritePos(index, x, y);
-
-	return mp_const_none;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(surface_setHwSpritePos_obj, 4, 4, surface_setHwSpritePos);
 
 STATIC mp_obj_t surface_set_clip(size_t n_args, const mp_obj_t *args) {
 
@@ -551,8 +509,6 @@ STATIC const mp_rom_map_elem_t surface_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_get_rect), MP_ROM_PTR(&surface_get_rect_obj) },
     { MP_ROM_QSTR(MP_QSTR_fill), MP_ROM_PTR(&surface_fill_obj) },
     { MP_ROM_QSTR(MP_QSTR_blit), MP_ROM_PTR(&surface_blit_obj) },
-    { MP_ROM_QSTR(MP_QSTR_setHwSprite), MP_ROM_PTR(&surface_setHwSprite_obj) },
-    { MP_ROM_QSTR(MP_QSTR_setHwSpritePos), MP_ROM_PTR(&surface_setHwSpritePos_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_clip), MP_ROM_PTR(&surface_set_clip_obj) },
 };
 STATIC MP_DEFINE_CONST_DICT(surface_locals_dict, surface_locals_dict_table);
@@ -593,7 +549,7 @@ STATIC mp_obj_t draw_rect(size_t n_args, const mp_obj_t *args) {
     else
         Pok_Display_drawRectangle(rect->x, rect->y, rect->w, rect->h);
 
-	return mp_const_none;
+    return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(draw_rect_obj, 2, 3, draw_rect);
 
@@ -613,7 +569,7 @@ STATIC mp_obj_t draw_circle(size_t n_args, const mp_obj_t *args) {
     else
         Pok_Display_drawCircle(x, y, r);
 
-	return mp_const_none;
+    return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(draw_circle_obj, 4, 5, draw_circle);
 
@@ -1023,6 +979,119 @@ const mp_obj_module_t mp_module_tilemap = {
     .globals = (mp_obj_dict_t*)&tilemap_module_globals,
 };
 
+// *** TAS UI
+
+STATIC mp_obj_t tas_setCursor(size_t n_args, const mp_obj_t *args) {
+    
+    mp_int_t col = mp_obj_get_int(args[0]);
+    mp_int_t row = mp_obj_get_int(args[1]);
+    Pok_TasUI_setCursor(col, row);
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(tas_setCursor_obj, 2, 2, tas_setCursor);
+
+STATIC mp_obj_t tas_printString(size_t n_args, const mp_obj_t *args) {
+    
+    const char *text = mp_obj_str_get_str(args[0]);
+    Pok_TasUI_printString((char*)text);
+    return mp_const_none; 
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(tas_printString_obj, 1, 1, tas_printString);
+
+STATIC mp_obj_t tas_printInteger(size_t n_args, const mp_obj_t *args) {
+    
+    mp_int_t number = mp_obj_get_int(args[0]);
+    Pok_TasUI_printInteger(number);
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(tas_printInteger_obj, 1, 1, tas_printInteger);
+
+
+STATIC mp_obj_t tas_setTile(size_t n_args, const mp_obj_t *args) {
+    
+    mp_int_t col = mp_obj_get_int(args[0]);
+    mp_int_t row = mp_obj_get_int(args[1]);
+    mp_int_t id = mp_obj_get_int(args[2]);
+    Pok_TasUI_setTile(col, row, id);
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(tas_setTile_obj, 3, 3, tas_setTile);
+
+
+STATIC mp_obj_t tas_clear(void) {
+    
+    Pok_TasUI_clear();
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(tas_clear_obj, tas_clear);
+
+STATIC mp_obj_t tas_fillRectTiles(size_t n_args, const mp_obj_t *args) {
+    
+    mp_int_t col1 = mp_obj_get_int(args[0]);
+    mp_int_t row1 = mp_obj_get_int(args[1]);
+    mp_int_t col2 = mp_obj_get_int(args[2]);
+    mp_int_t row2 = mp_obj_get_int(args[3]);
+    mp_int_t id = mp_obj_get_int(args[4]);
+    Pok_TasUI_fillRectTiles(col1, row1, col2, row2, id);
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(tas_fillRectTiles_obj, 5, 5, tas_fillRectTiles);
+
+STATIC mp_obj_t tas_drawBox(size_t n_args, const mp_obj_t *args) {
+    
+    mp_int_t col1 = mp_obj_get_int(args[0]);
+    mp_int_t row1 = mp_obj_get_int(args[1]);
+    mp_int_t col2 = mp_obj_get_int(args[2]);
+    mp_int_t row2 = mp_obj_get_int(args[3]);
+    Pok_TasUI_drawBox(col1, row1, col2, row2);
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(tas_drawBox_obj, 4, 4, tas_drawBox);
+
+STATIC mp_obj_t tas_drawGauge(size_t n_args, const mp_obj_t *args) {
+    
+    mp_int_t col1 = mp_obj_get_int(args[0]);
+    mp_int_t col2 = mp_obj_get_int(args[1]);
+    mp_int_t row = mp_obj_get_int(args[2]);
+    mp_int_t current = mp_obj_get_int(args[3]);
+    mp_int_t maxValue = mp_obj_get_int(args[4]);
+    Pok_TasUI_drawGauge(col1, col2, row, current, maxValue);
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(tas_drawGauge_obj, 5, 5, tas_drawGauge);
+
+
+STATIC const mp_rom_map_elem_t tas_module_globals_table[] = {
+    { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_TAS) },  // TAS module name
+    // Methods
+    { MP_ROM_QSTR(MP_QSTR_setCursor), MP_ROM_PTR(&tas_setCursor_obj) },
+    { MP_ROM_QSTR(MP_QSTR_printString), MP_ROM_PTR(&tas_printString_obj) },
+    { MP_ROM_QSTR(MP_QSTR_printInteger), MP_ROM_PTR(&tas_printInteger_obj) },
+    { MP_ROM_QSTR(MP_QSTR_setTile), MP_ROM_PTR(&tas_setTile_obj) },
+    { MP_ROM_QSTR(MP_QSTR_clear), MP_ROM_PTR(&tas_clear_obj) },
+    { MP_ROM_QSTR(MP_QSTR_fillRectTiles), MP_ROM_PTR(&tas_fillRectTiles_obj) },
+    { MP_ROM_QSTR(MP_QSTR_drawBox), MP_ROM_PTR(&tas_drawBox_obj) },
+    { MP_ROM_QSTR(MP_QSTR_drawGauge), MP_ROM_PTR(&tas_drawGauge_obj) },
+    
+    // Consts
+    { MP_ROM_QSTR(MP_QSTR_EMPTY_TILE), MP_ROM_INT(PYGAME_TAS_TILE_EMPTY) },
+    { MP_ROM_QSTR(MP_QSTR_RIGHT_ARROW_TILE), MP_ROM_INT(PYGAME_TAS_RIGHT_ARROW_TILE) },
+    { MP_ROM_QSTR(MP_QSTR_LEFT_ARROW_TILE), MP_ROM_INT(PYGAME_TAS_LEFT_ARROW_TILE) },
+    { MP_ROM_QSTR(MP_QSTR_UP_ARROW_TILE), MP_ROM_INT(PYGAME_TAS_UP_ARROW_TILE) },
+    { MP_ROM_QSTR(MP_QSTR_DOWN_ARROW_TILE), MP_ROM_INT(PYGAME_TAS_DOWN_ARROW_TILE) },
+    { MP_ROM_QSTR(MP_QSTR_UNCHECKED_TILE), MP_ROM_INT(PYGAME_TAS_UNCHECKED_TILE) },
+    { MP_ROM_QSTR(MP_QSTR_CHECKED_TILE), MP_ROM_INT(PYGAME_TAS_CHECKED_TILE) },
+    { MP_ROM_QSTR(MP_QSTR_SPACE_TILE), MP_ROM_INT(PYGAME_TAS_SPACE_TILE) },
+ };
+
+STATIC MP_DEFINE_CONST_DICT(tas_module_globals, tas_module_globals_table);
+
+const mp_obj_module_t mp_module_tas = {
+    .base = { &mp_type_module },
+    .globals = (mp_obj_dict_t*)&tas_module_globals,
+};
+
+
 // *** upygame module
 
 STATIC const mp_rom_map_elem_t pygame_module_globals_table[] = {
@@ -1035,9 +1104,10 @@ STATIC const mp_rom_map_elem_t pygame_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_event), MP_ROM_PTR(&mp_module_event) },  		// event module
     { MP_ROM_QSTR(MP_QSTR_mixer), MP_ROM_PTR(&mp_module_mixer) },  	// Audio Mixer module
     { MP_ROM_QSTR(MP_QSTR_tilemap), MP_ROM_PTR(&mp_module_tilemap) },  	// tilemap module
+    { MP_ROM_QSTR(MP_QSTR_TAS), MP_ROM_PTR(&mp_module_tas) },  	// TAS module
 
     // Classes
-    { MP_ROM_QSTR(MP_QSTR_Rect), MP_ROM_PTR(&mp_type_rect) },	// Event class
+    { MP_ROM_QSTR(MP_QSTR_Rect), MP_ROM_PTR(&mp_type_rect) },	// Rect class
 
     // Consts
     { MP_ROM_QSTR(MP_QSTR_NOEVENT), MP_ROM_INT(PYGAME_NOEVENT) },

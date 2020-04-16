@@ -10,21 +10,21 @@ Install following packages using cygwin's setup.exe:
 * mingw64-x86_64-gcc-core
 * make
 
-Build using:
+Build using (64-bit target library binary):
 
-    make CROSS_COMPILE=i686-w64-mingw32- lib
+    make CROSS_COMPILE=x86_64-w64-mingw32- lib
     
 Or (verbose and debug) use:
-    make CROSS_COMPILE=i686-w64-mingw32- V=1 DEBUG=1 lib
+    make CROSS_COMPILE=x86_64-w64-mingw32- V=1 DEBUG=1 lib
 
 To clean up use:
-     make CROSS_COMPILE=i686-w64-mingw32- clean
+     make CROSS_COMPILE=x86_64-w64-mingw32- clean
    
 
 Building mpy-cross (if needed)
 ------------------------------
 cd ../../mpy-cross
-make CROSS_COMPILE=i686-w64-mingw32-
+make CROSS_COMPILE=x86_64-w64-mingw32-
 
 FAQ
 -----------------------------

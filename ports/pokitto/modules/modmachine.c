@@ -117,13 +117,13 @@ STATIC mp_obj_t mod_machine_blit_framebuf(size_t n_args, const mp_obj_t *args) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_machine_blit_framebuf_obj, 3, 4, mod_machine_blit_framebuf);
 
-STATIC mp_obj_t mod_machine_buttons_repeat(size_t n_args, const mp_obj_t *args) {
-	uint8_t button = mp_obj_get_int(args[0]);
-	uint8_t period = mp_obj_get_int(args[1]);
-	Pok_Core_buttons_repeat(button, period);
-	return mp_const_none;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_machine_buttons_repeat_obj, 2, 2, mod_machine_buttons_repeat);
+// STATIC mp_obj_t mod_machine_buttons_repeat(size_t n_args, const mp_obj_t *args) {
+	// uint8_t button = mp_obj_get_int(args[0]);
+	// uint8_t period = mp_obj_get_int(args[1]);
+	// Pok_Core_buttons_repeat(button, period);
+	// return mp_const_none;
+// }
+// STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_machine_buttons_repeat_obj, 2, 2, mod_machine_buttons_repeat);
 
 STATIC mp_obj_t mod_machine_draw_text(size_t n_args, const mp_obj_t *args) {
 	uint8_t x = mp_obj_get_int(args[0]);
